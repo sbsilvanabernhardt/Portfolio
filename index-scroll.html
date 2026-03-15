@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Silvana Bernhardt — Finance & Strategy</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; cursor: none !important; }
+
+    :root {
+      --white:  #FFFFFF;
+      --black:  #080808;
+      --blue:   #111111;
+      --off:    #F5F5F0;
+      --rule:   #E8E8E2;
+      --mid:    #888880;
+      --pad:    clamp(1.5rem, 4vw, 4rem);
+      --inner:  960px;
+      --nav-h:  68px;
+    }
+
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--white);
+      color: var(--black);
+      font-family: 'Inter', sans-serif;
+      font-size: 16px; line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    /* ── CUSTOM CURSOR ────────────────────── */
+    .cursor-dot {
+      position: fixed; top: -4px; left: -4px;
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--white);
+      z-index: 9999; pointer-events: none;
+      will-change: transform; mix-blend-mode: difference;
+    }
+    .cursor-ring {
+      position: fixed; top: -20px; left: -20px;
+      width: 40px; height: 40px; border-radius: 50%;
+      border: 1px solid rgba(0,0,0,.25);
+      z-index: 9998; pointer-events: none;
+      will-change: transform; mix-blend-mode: difference;
+      transition: width .22s, height .22s, top .22s, left .22s;
+    }
+    .cursor-ring.hover { top: -28px; left: -28px; width: 56px; height: 56px; }
+
+    /* ── PROGRESS BAR ─────────────────────── */
+    .progress-bar {
+      position: fixed; top: 0; left: 0;
+      height: 2px; width: 0%; background: var(--blue);
+      z-index: 600;
+    }
+
+    /* ── GRADIENT MESH ──────────────────── */
+    .gmesh { width: 100%; position: relative; overflow: hidden; }
+    .gmesh-inner {
+      position: absolute; inset: 0; width: 200%; height: 100%;
+      background: linear-gradient(120deg, #000 0%, #111 18%, #2a2a2a 38%, #666 58%, #aaa 78%, #e8e8e2 100%);
+      background-color: #000;
+      filter: none;
+      animation: drift 18s ease-in-out infinite alternate;
+    }
+    @keyframes drift { from { transform: translateX(0); } to { transform: translateX(-22%); } }
+
+    /* mesh fades into white at bottom */
+    .hero-mesh::after {
+      content: ''; position: absolute; bottom: 0; left: 0; right: 0;
+      height: 55%;
+      background: linear-gradient(to bottom, transparent, var(--white));
+      pointer-events: none;
+    }
+
+    /* ── NAV ─────────────────────────────── */
+    .top-nav {
+      position: fixed; inset: 0 0 auto 0; z-index: 400;
+      height: var(--nav-h);
+      padding: 0 var(--pad);
+      display: flex; justify-content: space-between; align-items: center;
+      transition: background .3s, border-bottom .3s;
+    }
+    .top-nav.scrolled {
+      background: rgba(255,255,255,.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(0,0,0,.08);
+    }
+    .nav-logo {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.2rem; font-weight: 700;
+      letter-spacing: -.02em; color: var(--white); text-decoration: none;
+      transition: color .3s;
+    }
+    .top-nav.scrolled .nav-logo { color: var(--black); }
+    .nav-links { display: flex; gap: 2.25rem; list-style: none; }
+    .nav-links a {
+      font-size: .75rem; font-weight: 500; letter-spacing: .07em;
+      text-transform: uppercase; color: rgba(255,255,255,.6);
+      text-decoration: none; transition: color .2s;
+    }
+    .nav-links a:hover { color: var(--white); }
+    .top-nav.scrolled .nav-links a { color: rgba(0,0,0,.4); }
+    .top-nav.scrolled .nav-links a:hover { color: var(--black); }
+
+    /* ── DOT NAV ─────────────────────────── */
+    .dot-nav {
+      position: fixed; right: 1.75rem; top: 50%;
+      transform: translateY(-50%);
+      display: flex; flex-direction: column; gap: .6rem;
+      z-index: 350;
+    }
+    .dot-nav-item {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: rgba(0,0,0,.18);
+      border: none; padding: 0;
+      transition: background .25s, transform .25s;
+    }
+    .dot-nav-item:hover { background: rgba(0,0,0,.4); }
+    .dot-nav-item.active { background: var(--blue); transform: scale(1.8); }
+
+    /* ── HERO ─────────────────────────────── */
+    #hero {
+      min-height: 100vh; display: flex; flex-direction: column;
+      background: var(--white);
+    }
+    .hero-mesh { height: clamp(300px, 52vh, 500px); position: relative; overflow: hidden; }
+    .hero-mesh .gmesh-inner { animation-duration: 20s; }
+    .hero-over {
+      position: absolute; inset: 0;
+      display: flex; align-items: flex-start;
+      padding: calc(var(--nav-h) + 1.5rem) var(--pad) 0;
+    }
+    .hero-kicker {
+      font-size: .85rem; letter-spacing: .15em;
+      text-transform: uppercase; color: rgba(255,255,255,.65); font-weight: 500;
+    }
+    .hero-lower {
+      flex: 1; display: flex; flex-direction: column;
+      justify-content: space-between;
+      padding: 2.5rem var(--pad) 3.5rem;
+      background: var(--white);
+    }
+    .hero-h1 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: clamp(3.5rem, 9.5vw, 10.5rem);
+      font-weight: 700; line-height: .93;
+      letter-spacing: -.045em; color: var(--black);
+      max-width: var(--inner); margin: 0 auto; width: 100%;
+    }
+    .hero-h1 .hi { color: var(--blue); }
+    .hero-foot {
+      max-width: var(--inner); margin: 2.5rem auto 0; width: 100%;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; align-items: end;
+      padding-top: 2rem; border-top: 1px solid rgba(0,0,0,.1);
+    }
+    .hero-desc { font-size: 1rem; color: rgba(0,0,0,.5); line-height: 1.8; max-width: 420px; }
+    .hero-desc p { margin-bottom: 0.85rem; }
+    .hero-desc p:last-child { margin-bottom: 0; }
+    .hero-actions { display: flex; justify-content: flex-end; gap: .75rem; }
+
+    .btn {
+      display: inline-block;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: .78rem; font-weight: 700;
+      letter-spacing: .08em; text-transform: uppercase;
+      text-decoration: none; padding: .8rem 1.6rem;
+      border: 1.5px solid rgba(0,0,0,.2); color: var(--black);
+      background: transparent; transition: all .15s;
+    }
+    .btn:hover { border-color: var(--black); background: var(--black); color: var(--white); }
+    .btn-fill { background: var(--black); color: var(--white); border-color: var(--black); }
+    .btn-fill:hover { background: #333; border-color: #333; }
+
+    /* ── STACKING CARD SECTIONS ───────────── */
+    /*
+      Each section is sticky at top: --nav-h.
+      Sections stack on top of each other in ascending z-index order.
+      JS adds a subtle scale-down to cards that get covered.
+    */
+    #sections {
+      position: relative;
+    }
+
+    .work-section {
+      position: relative;
+      min-height: 100vh;
+      background: var(--white);
+      border-radius: 20px 20px 0 0;
+      box-shadow: 0 -8px 40px rgba(0,0,0,.1);
+      padding: 5rem var(--pad) 6rem;
+      margin-top: -24px;
+      overflow: hidden;
+    }
+
+    /* alternating white / faint off-white keeps visual rhythm */
+    .work-section:nth-child(even) { background: var(--off); }
+
+    /* later cards sit on top when overlapping */
+    .work-section[data-i="0"] { z-index: 1; }
+    .work-section[data-i="1"] { z-index: 2; }
+    .work-section[data-i="2"] { z-index: 3; }
+    .work-section[data-i="3"] { z-index: 4; }
+    .work-section[data-i="4"] { z-index: 5; }
+
+    /* ── NARROW INNER WRAPPER ─────────────── */
+    .section-inner { max-width: var(--inner); margin: 0 auto; }
+
+    /* ── GHOST NUMBER ─────────────────────── */
+    .ws-bg-num {
+      position: absolute; top: 50%; right: -.06em;
+      transform: translateY(-50%);
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: clamp(14rem, 28vw, 26rem);
+      font-weight: 700; line-height: 1; letter-spacing: -.06em;
+      color: var(--blue); opacity: .05;
+      pointer-events: none; user-select: none;
+    }
+
+    /* ── SECTION HEADER ───────────────────── */
+    .ws-head { margin-bottom: 3.5rem; position: relative; z-index: 1; }
+
+    .ws-head-rule {
+      height: 1px; background: rgba(0,0,0,.1);
+    }
+    .ws-head-rule-bottom {
+      height: 1px; background: rgba(0,0,0,.1);
+      transform: scaleX(0); transform-origin: left;
+      transition: transform .7s cubic-bezier(.4,0,.2,1) .35s;
+    }
+    .work-section.title-in .ws-head-rule-bottom { transform: scaleX(1); }
+
+    .ws-title-row {
+      display: flex; align-items: flex-start; gap: 1.5rem;
+      padding: .6rem 0;
+    }
+
+    .ws-num {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: .65rem; font-weight: 700;
+      letter-spacing: .2em; text-transform: uppercase;
+      color: var(--blue); flex-shrink: 0; padding-top: .5em;
+    }
+
+    .ws-title-clip { overflow: hidden; flex: 1; }
+
+    .ws-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: clamp(3rem, 8vw, 9rem);
+      font-weight: 700; letter-spacing: -.05em;
+      line-height: .92; color: var(--black);
+      display: block;
+      transform: translateY(108%);
+      transition: transform .85s cubic-bezier(.16, 1, .3, 1);
+      will-change: transform;
+    }
+    .work-section.title-in .ws-title { transform: translateY(0); }
+
+    /* ── BODY ─────────────────────────────── */
+    .ws-body { position: relative; z-index: 1; }
+
+    .panel-grid {
+      display: grid; grid-template-columns: 1.55fr 1fr;
+      gap: 5rem; align-items: start;
+    }
+    .panel-grid.reverse { grid-template-columns: 1fr 1.55fr; }
+    .panel-grid.reverse .panel-text  { order: 2; }
+    .panel-grid.reverse .panel-aside { order: 1; }
+
+    .panel-text p {
+      font-size: 1.08rem; color: rgba(0,0,0,.62);
+      line-height: 1.9; margin-bottom: 1.2rem;
+    }
+    .panel-text p:last-child { margin-bottom: 0; }
+    .panel-text strong { color: var(--black); font-weight: 600; }
+
+    .panel-aside-label {
+      font-size: .65rem; font-weight: 700;
+      letter-spacing: .2em; text-transform: uppercase;
+      color: var(--blue);
+      margin-bottom: 1.1rem; padding-bottom: .85rem;
+      border-bottom: 1px solid rgba(0,0,0,.08);
+    }
+    .panel-list { list-style: none; display: flex; flex-direction: column; }
+    .panel-list li {
+      font-size: 1rem; color: rgba(0,0,0,.62);
+      padding: .7rem 0; border-bottom: 1px solid rgba(0,0,0,.07);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .panel-list li:last-child { border-bottom: none; }
+    .panel-list span { font-size: .82rem; font-weight: 700; color: var(--blue); }
+
+    /* ── STATS ────────────────────────────── */
+    .panel-stats {
+      display: grid; grid-template-columns: repeat(3,1fr);
+      border-top: 1px solid rgba(0,0,0,.08); margin-top: 3rem;
+    }
+    .panel-stat { padding: 2rem 2rem 0 0; border-right: 1px solid rgba(0,0,0,.08); }
+    .panel-stat + .panel-stat { padding-left: 2rem; }
+    .panel-stat:last-child { border-right: none; }
+    .panel-stat-n {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: clamp(2.8rem, 5vw, 5rem);
+      font-weight: 700; letter-spacing: -.05em;
+      color: var(--blue); line-height: 1;
+    }
+    .panel-stat-l { font-size: .85rem; color: rgba(0,0,0,.4); margin-top: .45rem; line-height: 1.4; }
+
+    /* ── TAGS ─────────────────────────────── */
+    .tag-row { display: flex; flex-wrap: wrap; gap: .45rem; margin-top: 1.75rem; }
+    .tag {
+      font-size: .75rem; font-weight: 600; letter-spacing: .04em;
+      color: rgba(0,0,0,.5); background: transparent;
+      border: 1px solid rgba(0,0,0,.14); padding: .38rem .85rem;
+      transition: border-color .15s, color .15s;
+    }
+    .tag:hover { border-color: var(--blue); color: var(--blue); }
+
+    /* ── REVEAL ────────────────────────────── */
+    .reveal {
+      opacity: 0; transform: translateY(28px);
+      transition:
+        opacity   .65s cubic-bezier(.4,0,.2,1) var(--delay,0ms),
+        transform .65s cubic-bezier(.4,0,.2,1) var(--delay,0ms);
+    }
+    .reveal.in { opacity: 1; transform: translateY(0); }
+
+    /* ── CONTACT ────────────────────────── */
+    #contact {
+      background: var(--off); padding: 7rem var(--pad) 5rem;
+      position: relative; z-index: 6;
+    }
+    .contact-inner { max-width: var(--inner); margin: 0 auto; }
+    .contact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6rem; align-items: end; }
+    .contact-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: clamp(3rem, 7.5vw, 7.5rem);
+      font-weight: 700; line-height: .93;
+      letter-spacing: -.045em; color: var(--black);
+    }
+    .contact-title em { font-style: normal; color: var(--blue); }
+    .contact-note { font-size: 1rem; color: rgba(0,0,0,.5); line-height: 1.85; margin-bottom: 2rem; }
+    .contact-links { display: flex; flex-direction: column; gap: .75rem; }
+    .contact-link {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: .95rem; font-weight: 700;
+      color: var(--black); text-decoration: none;
+      display: flex; align-items: center; gap: .75rem;
+      letter-spacing: .01em; transition: gap .2s, color .2s;
+    }
+    .contact-link:hover { color: var(--blue); gap: 1.25rem; }
+    .contact-link::before { content: '→'; }
+
+    footer {
+      background: var(--white); border-top: 1px solid var(--rule);
+      padding: 1.5rem var(--pad); display: flex; justify-content: space-between;
+    }
+    footer p { font-size: .68rem; color: rgba(0,0,0,.3); letter-spacing: .1em; text-transform: uppercase; }
+
+    /* ── HERO INTRO ─────────────────────── */
+    .hero-intro {
+      max-width: 680px;
+      margin: 2.25rem auto 0;
+      width: 100%;
+    }
+    .hero-intro p {
+      font-size: 1rem;
+      color: rgba(0,0,0,.5);
+      line-height: 1.85;
+      margin-bottom: 0.85rem;
+    }
+    .hero-intro p:last-child { margin-bottom: 0; }
+
+    /* ── ASIDE DESC LIST (verbatim bullet labels) ── */
+    .panel-list-desc { list-style: none; }
+    .panel-list-desc li {
+      display: block;
+      font-size: 0.95rem;
+      color: rgba(0,0,0,.6);
+      padding: 0.7rem 0;
+      border-bottom: 1px solid rgba(0,0,0,.07);
+      line-height: 1.55;
+    }
+    .panel-list-desc li:last-child { border-bottom: none; }
+    .panel-list-desc li strong {
+      display: block;
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--blue);
+      margin-bottom: 0.2rem;
+    }
+
+    /* ── RESPONSIVE ─────────────────────── */
+    @media (max-width: 860px) {
+      .hero-foot { grid-template-columns: 1fr; gap: 1.5rem; }
+      .hero-actions { justify-content: flex-start; }
+      .panel-grid, .panel-grid.reverse { grid-template-columns: 1fr; gap: 2.5rem; }
+      .panel-grid.reverse .panel-text, .panel-grid.reverse .panel-aside { order: unset; }
+      .panel-stats { grid-template-columns: 1fr 1fr; }
+      .contact-grid { grid-template-columns: 1fr; gap: 2.5rem; }
+      .nav-links { display: none; }
+      .dot-nav { display: none; }
+      .work-section { border-radius: 12px 12px 0 0; min-height: auto; }
+      *, *::before, *::after { cursor: auto !important; }
+      .cursor-dot, .cursor-ring { display: none; }
+    }
+    @media (max-width: 520px) {
+      .panel-stats { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="cursor-dot"  id="cursorDot"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+<div class="progress-bar" id="progress"></div>
+
+<!-- NAV -->
+<nav class="top-nav" id="nav">
+  <a href="#hero" class="nav-logo">Silvana Bernhardt</a>
+  <ul class="nav-links">
+    <li><a href="#sections">Work</a></li>
+    <li><a href="#contact">Contact</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="hero-mesh gmesh">
+    <div class="gmesh-inner"></div>
+    <div class="hero-over">
+      <span class="hero-kicker">Finance · Strategy · AI · Process Improvement · New York, NY</span>
+    </div>
+  </div>
+  <div class="hero-lower">
+    <h1 class="hero-h1">
+      Not your<br/>typical <span class="hi">finance</span><br/>mind.
+    </h1>
+    <div class="hero-foot">
+      <div class="hero-desc">
+        <p>Hi, I'm Silvana. I work in Finance, but I'm probably not your typical finance person. I'm someone who thinks mess is fun if we get the chance to clean it. I thrive in roles that allow me to be creative, implement structure, and turn chaos into clarity.</p>
+        <p>Growing up in Argentina, I became fluent in constant change, uncertainty, and shifting financial landscapes. That environment gave me a unique blend of scrappy creativity and a relentless search for stability. It built a mindset I carry into every project: "There is no problem big enough that can't be fixed."</p>
+      </div>
+      <div class="hero-actions">
+        <a href="#sections" class="btn">See My Work</a>
+        <a href="https://www.linkedin.com/in/silvanabernhardt/" target="_blank" rel="noopener" class="btn btn-fill">LinkedIn ↗</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DOT NAV -->
+<nav class="dot-nav" aria-label="Section navigation">
+  <button class="dot-nav-item" data-target="s0" title="About Me"></button>
+  <button class="dot-nav-item" data-target="s1" title="AI Process Improvement"></button>
+  <button class="dot-nav-item" data-target="s2" title="Management Skills"></button>
+  <button class="dot-nav-item" data-target="s3" title="Excel Modelling"></button>
+  <button class="dot-nav-item" data-target="s4" title="Cross Functional Work"></button>
+</nav>
+
+<!-- STACKING CARD SECTIONS -->
+<div id="sections">
+
+  <!-- 01 About Me -->
+  <section class="work-section" data-i="0" id="s0">
+    <div class="ws-bg-num" aria-hidden="true">01</div>
+    <div class="section-inner">
+      <div class="ws-head">
+        <div class="ws-head-rule"></div>
+        <div class="ws-title-row">
+          <span class="ws-num">01</span>
+          <div class="ws-title-clip"><h2 class="ws-title">About Me</h2></div>
+        </div>
+        <div class="ws-head-rule-bottom"></div>
+      </div>
+      <div class="ws-body">
+        <div class="panel-grid">
+          <div class="panel-text reveal" style="--delay:160ms">
+            <p>I am the person who takes a blurry idea and translates it into something simple, structured, and useful. I'm the one you have a two-hour brainstorming session with, only for me to finish by saying, "Okay, so what you actually need is this," and handing you the roadmap.</p>
+            <p>I thrive as <strong>"the fixer"</strong>—someone who doesn't just optimize my own workflow, but re-engineers the team's processes to make everyone's life easier. My goal is to empower people with tools that provide independence, reliability, and clarity.</p>
+            <p>Currently, I am leading the FP&amp;A function for a high-growth SaaS company as their <strong>first and sole hire</strong>. This "scrappy" leadership is backed by a diverse professional experience:</p>
+            <p><strong>Global Standards at Accenture:</strong> Serviced California-based GTM teams, mastering global standard practices and delivering high-level financial management alongside inspiring leaders across the globe.</p>
+            <p><strong>Strategic Transformation:</strong> Supported a massive decentralization project for a major healthcare provider in Argentina, revolutionizing national operations and regional P&amp;L accountability.</p>
+            <p><strong>The HR Foundation:</strong> I began my career in Recruiting and HR Reporting. This experience was pivotal—it taught me to view a company as a complex ecosystem where people and processes are inseparable.</p>
+          </div>
+          <div class="panel-aside reveal" style="--delay:240ms">
+            <div class="panel-aside-label">At a glance</div>
+            <ul class="panel-list-desc">
+              <li><strong>Expertise</strong>10+ years in corporate functions. Last 5+ years in Strategic Finance &amp; FP&amp;A.</li>
+              <li><strong>Foundations</strong>Early career in HR (Recruitment &amp; People Analytics).</li>
+              <li><strong>Versatility</strong>Deep experience across 4 distinct industries (SaaS, Consulting, Healthcare, IT).</li>
+              <li><strong>Stakeholders</strong>Trusted partner to the CFO. External: Board members, banks, funding companies, Series B investors.</li>
+              <li><strong>Multi-cultural Teams</strong>Collaborated with teams across the US, India, Europe, UK, UAE, the Philippines, and Argentina.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 02 AI Assisted Process Improvement -->
+  <section class="work-section" data-i="1" id="s1">
+    <div class="ws-bg-num" aria-hidden="true">02</div>
+    <div class="section-inner">
+      <div class="ws-head">
+        <div class="ws-head-rule"></div>
+        <div class="ws-title-row">
+          <span class="ws-num">02</span>
+          <div class="ws-title-clip"><h2 class="ws-title">AI Assisted<br/>Process Improvement</h2></div>
+        </div>
+        <div class="ws-head-rule-bottom"></div>
+      </div>
+      <div class="ws-body">
+        <div class="panel-grid reverse">
+          <div class="panel-aside reveal" style="--delay:160ms">
+            <div class="panel-aside-label">Key Outcomes</div>
+            <ul class="panel-list">
+              <li>FP&amp;A value-adding time <span>↑ More</span></li>
+              <li>Reporting &amp; data cleaning <span>↓ Less</span></li>
+              <li>P&amp;L cost review <span>Real-time</span></li>
+              <li>Pivot tables replaced <span>Dynamic formulas</span></li>
+              <li>Portfolio built with <span>Claude Code</span></li>
+            </ul>
+          </div>
+          <div class="panel-text reveal" style="--delay:240ms">
+            <p>I'm currently discovering how AI tools can help make the startup and small company world easier. So far, I've leveraged <strong>Gemini, ChatGPT, and Claude</strong> to architect complex Excel logic, cutting manual formula-building time significantly.</p>
+            <p>Developed custom prompts and workflows in Claude to <strong>automate cost-review reporting and NetSuite data cleaning</strong>, making space for value-adding analysis.</p>
+            <p>Used Claude to map and reconcile messy customer data between ERP (NetSuite) systems and Excel. And used <strong>Claude Code to build this very portfolio site</strong> — with no website development knowledge.</p>
+            <div class="tag-row">
+              <span class="tag">Claude</span>
+              <span class="tag">ChatGPT</span>
+              <span class="tag">Gemini</span>
+              <span class="tag">NetSuite</span>
+              <span class="tag">Excel</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 03 Leadership & Management -->
+  <section class="work-section" data-i="2" id="s2">
+    <div class="ws-bg-num" aria-hidden="true">03</div>
+    <div class="section-inner">
+      <div class="ws-head">
+        <div class="ws-head-rule"></div>
+        <div class="ws-title-row">
+          <span class="ws-num">03</span>
+          <div class="ws-title-clip"><h2 class="ws-title">Leadership &amp;<br/>Management</h2></div>
+        </div>
+        <div class="ws-head-rule-bottom"></div>
+      </div>
+      <div class="ws-body">
+        <div class="panel-grid">
+          <div class="panel-text reveal" style="--delay:160ms">
+            <p><strong>Closing the Gap:</strong> Optimized monthly close coordination, reducing P&amp;L availability lag by 10 days within the first few months of implementation.</p>
+            <p><strong>Team Alignment &amp; Efficiency:</strong> Created a centralized, automated Finance Operations Calendar to ensure 100% compliance with global reporting deadlines. Proposed proactive "housekeeping" tasks to surface cost efficiency opportunities — for example, quarterly reviews of expiring subscriptions and vendor contracts with automatic renewal reminders.</p>
+            <p><strong>Onboarding Excellence:</strong> Served as a Team Ambassador at Accenture; created the "Onboarding Blueprint" — job aids and training docs — that cut new-hire ramp-up time significantly.</p>
+            <p><strong>Mentorship:</strong> Actively mentored junior analysts on technical Excel skills and "Big Picture" financial thinking.</p>
+          </div>
+          <div class="panel-aside reveal" style="--delay:240ms">
+            <div class="panel-aside-label">Skills &amp; Experience</div>
+            <ul class="panel-list">
+              <li>Onboarding &amp; documentation</li>
+              <li>Team work planning</li>
+              <li>Onboarding &amp; process documentation</li>
+              <li>Junior analyst mentoring</li>
+              <li>People development support</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 04 Process Improvement & Strategic Financial Modelling -->
+  <section class="work-section" data-i="3" id="s3">
+    <div class="ws-bg-num" aria-hidden="true">04</div>
+    <div class="section-inner">
+      <div class="ws-head">
+        <div class="ws-head-rule"></div>
+        <div class="ws-title-row">
+          <span class="ws-num">04</span>
+          <div class="ws-title-clip"><h2 class="ws-title">Process Improvement &amp;<br/>Strategic Modelling</h2></div>
+        </div>
+        <div class="ws-head-rule-bottom"></div>
+      </div>
+      <div class="ws-body">
+        <div class="panel-grid reverse">
+          <div class="panel-aside reveal" style="--delay:160ms">
+            <div class="panel-aside-label">Key Projects</div>
+            <ul class="panel-list">
+              <li>SaaS P&amp;Ls built <span>10 products</span></li>
+              <li>Payroll close cycle <span>8 days → Day 2</span></li>
+              <li>GL discrepancies <span>Eliminated</span></li>
+              <li>P&amp;L review time <span>Hours → Minutes</span></li>
+              <li>Reporting source <span>One truth</span></li>
+            </ul>
+          </div>
+          <div class="panel-text reveal" style="--delay:240ms">
+            <p><strong>SaaS Metrics Transformation:</strong> Converted 2 static business-unit reports into 10 dynamic product P&amp;Ls with full SaaS metrics — MRR, ARR, Churn, GRR, NRR, CAC — enabling consolidated and product cohort analysis.</p>
+            <p><strong>Audit-Ready Reconciliations:</strong> Built a Trial Balance vs. General Ledger framework that eliminated manual discrepancies and streamlined year-end audit support for the Finance and Accounting team.</p>
+            <p><strong>Global Payroll Transformation:</strong> Inherited a fragmented payroll process across US, UK, UAE, and India that took 8 days to close. Re-engineered the workflow in NetSuite/Excel to deliver clean, reconciled data by Day 2.</p>
+            <p><strong>Reporting 2.0:</strong> Integrated separate reporting deliverables into a single source of truth — enhanced with Pivot Charts, Tables, slicers, and timelines for dynamic, self-serve navigation.</p>
+            <div class="tag-row">
+              <span class="tag">SaaS Metrics</span>
+              <span class="tag">NetSuite</span>
+              <span class="tag">Excel</span>
+              <span class="tag">Power Query</span>
+              <span class="tag">Dynamic Arrays</span>
+              <span class="tag">Pivot Charts</span>
+            </div>
+            <div style="margin-top:2rem;">
+              <a href="https://github.com/YOUR-REPO-LINK-HERE" target="_blank" rel="noopener" class="btn btn-fill" style="font-size:.72rem;">View Sample Files ↗</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 05 Business Partnering -->
+  <section class="work-section" data-i="4" id="s4">
+    <div class="ws-bg-num" aria-hidden="true">05</div>
+    <div class="section-inner">
+      <div class="ws-head">
+        <div class="ws-head-rule"></div>
+        <div class="ws-title-row">
+          <span class="ws-num">05</span>
+          <div class="ws-title-clip"><h2 class="ws-title">Business Partnering</h2></div>
+        </div>
+        <div class="ws-head-rule-bottom"></div>
+      </div>
+      <div class="ws-body">
+        <div class="panel-grid">
+          <div class="panel-text reveal" style="--delay:160ms">
+            <p><strong>From Silos to Regions:</strong> Led a massive cultural shift for an Argentine healthcare leader — moving decision-making from 2 cities to 16 accountable regions. Built the models that gave regional managers true P&amp;L ownership, and trained them in financial planning, budgeting, and cross-functional thinking.</p>
+            <p><strong>GTM Empowerment:</strong> Proactively built "Finance for Non-Finance" guides for Go-To-Market teams, transforming them from data providers into strategic partners who understand their own ROI.</p>
+            <p><strong>HR Roots:</strong> Documented all organizational chart job descriptions, collaborated across every company function for recruiting and HR services. Implemented the company's HR system from scratch — trained users, created job aids, maintained updates, and integrated company workflows into the tool.</p>
+          </div>
+          <div class="panel-aside reveal" style="--delay:240ms">
+            <div class="panel-aside-label">Teams Partnered</div>
+            <ul class="panel-list">
+              <li>Go-To-Market &amp; Sales</li>
+              <li>Regional Operations</li>
+              <li>People &amp; HR</li>
+              <li>Executive &amp; Board</li>
+              <li>Finance &amp; Accounting</li>
+              <li>External: Banks &amp; Investors</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div><!-- /#sections -->
+
+<!-- CONTACT -->
+<section id="contact">
+  <div class="contact-inner">
+    <div class="contact-grid">
+      <div>
+        <p style="font-size:.65rem;letter-spacing:.22em;text-transform:uppercase;color:rgba(0,0,0,.3);margin-bottom:1.5rem;font-weight:600;">Contact</p>
+        <div class="contact-title">Let's build<br/>something<br/><em>better.</em></div>
+      </div>
+      <div>
+        <p class="contact-note">I thrive in companies where finance is a strategic engine, not just a support function — organisations building something meaningful and serious about using AI and automation to do it better.</p>
+        <div class="contact-links">
+          <a href="https://www.linkedin.com/in/silvanabernhardt/" target="_blank" rel="noopener" class="contact-link">Connect on LinkedIn</a>
+          <a href="mailto:sbsilvanabernhardt@gmail.com" class="contact-link">sbsilvanabernhardt@gmail.com</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p>© 2026 Silvana Bernhardt</p>
+  <p>Finance · Strategy · AI</p>
+</footer>
+
+<script>
+  /* ── CURSOR ────────────────────────────── */
+  const dot  = document.getElementById('cursorDot');
+  const ring = document.getElementById('cursorRing');
+  let mx = -200, my = -200, rx = -200, ry = -200;
+  document.addEventListener('mousemove', e => {
+    mx = e.clientX; my = e.clientY;
+    dot.style.transform = `translate(${mx - 4}px, ${my - 4}px)`;
+  });
+  (function animRing() {
+    rx += (mx - rx) * 0.1; ry += (my - ry) * 0.1;
+    ring.style.transform = `translate(${rx - 20}px, ${ry - 20}px)`;
+    requestAnimationFrame(animRing);
+  })();
+  document.querySelectorAll('a, button').forEach(el => {
+    el.addEventListener('mouseenter', () => ring.classList.add('hover'));
+    el.addEventListener('mouseleave', () => ring.classList.remove('hover'));
+  });
+
+  /* ── NAV ──────────────────────────────── */
+  const nav = document.getElementById('nav');
+  window.addEventListener('scroll', () => {
+    nav.classList.toggle('scrolled', window.scrollY > 40);
+  }, { passive: true });
+
+  /* ── PROGRESS BAR ─────────────────────── */
+  const progress = document.getElementById('progress');
+  const cards = Array.from(document.querySelectorAll('.work-section'));
+
+  function updateProgress() {
+    const total = document.body.scrollHeight - window.innerHeight;
+    if (total > 0) progress.style.width = (window.scrollY / total * 100) + '%';
+  }
+  window.addEventListener('scroll', updateProgress, { passive: true });
+  updateProgress();
+
+  /* ── SCROLL REVEAL ────────────────────── */
+  const revealObs = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) { e.target.classList.add('in'); revealObs.unobserve(e.target); }
+    });
+  }, { threshold: 0.1 });
+  document.querySelectorAll('.reveal').forEach(el => revealObs.observe(el));
+
+  /* ── TITLE REVEAL ─────────────────────── */
+  const titleObs = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) { e.target.classList.add('title-in'); titleObs.unobserve(e.target); }
+    });
+  }, { threshold: 0.12 });
+  cards.forEach(s => titleObs.observe(s));
+
+  /* ── STAT COUNTERS ────────────────────── */
+  function easeOut(t) { return 1 - Math.pow(1 - t, 3); }
+  function animateCounter(el) {
+    const end = parseFloat(el.dataset.target || '0');
+    const prefix = el.dataset.prefix || '', suffix = el.dataset.suffix || '';
+    const dur = 1500, t0 = performance.now();
+    (function tick(now) {
+      const p = Math.min((now - t0) / dur, 1);
+      el.textContent = prefix + (Number.isInteger(end) ? Math.round(end * easeOut(p)) : (end * easeOut(p)).toFixed(0)) + suffix;
+      if (p < 1) requestAnimationFrame(tick);
+      else el.textContent = prefix + end + suffix;
+    })(t0);
+  }
+  const counterObs = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) { animateCounter(e.target); counterObs.unobserve(e.target); }
+    });
+  }, { threshold: 0.5 });
+  document.querySelectorAll('.counter').forEach(el => counterObs.observe(el));
+
+  /* ── DOT NAV ──────────────────────────── */
+  const dots = document.querySelectorAll('.dot-nav-item');
+  dots.forEach(d => {
+    d.addEventListener('click', () => {
+      const t = document.getElementById(d.dataset.target);
+      if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
+  const sectionObs = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        dots.forEach(d => d.classList.remove('active'));
+        const i = parseInt(e.target.dataset.i);
+        if (dots[i]) dots[i].classList.add('active');
+      }
+    });
+  }, { threshold: 0.4 });
+  cards.forEach(s => sectionObs.observe(s));
+</script>
+</body>
+</html>

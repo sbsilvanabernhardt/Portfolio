@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Silvana Bernhardt — Finance & Strategy</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --white:  #FFFFFF;
+      --black:  #080808;
+      --blue:   #2563EB;   /* electric blue – even sections + hero highlight */
+      --gold:   #EAB308;   /* clean yellow – odd sections + contact accent */
+      --off:    #F2F2EE;
+      --rule:   #E0E0DA;
+      --mid:    #888880;
+      --pad:    clamp(1.5rem, 4vw, 4rem);
+
+      /* per-section open colors – set via open-state overrides below */
+    }
+
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--white);
+      color: var(--black);
+      font-family: 'Inter', sans-serif;
+      font-size: 16px;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    /* ── GRADIENT MESH ──────────────────── */
+    .gmesh {
+      width: 100%;
+      position: relative;
+      overflow: hidden;
+    }
+    .gmesh-inner {
+      position: absolute;
+      inset: 0;
+      width: 200%;
+      height: 100%;
+      background:
+        radial-gradient(ellipse 25% 180% at 3%  50%, rgba(0,  30, 255, 1.0) 0%, transparent 55%),
+        radial-gradient(ellipse 22% 160% at 18% 55%, rgba(0, 200, 100, 0.95) 0%, transparent 50%),
+        radial-gradient(ellipse 22% 180% at 34% 35%, rgba(160, 255, 0, 0.9)  0%, transparent 50%),
+        radial-gradient(ellipse 22% 160% at 50% 65%, rgba(255, 240, 50, 0.85) 0%, transparent 45%),
+        radial-gradient(ellipse 22% 180% at 65% 40%, rgba(255, 0, 120, 0.9)  0%, transparent 50%),
+        radial-gradient(ellipse 22% 160% at 80% 58%, rgba(100, 0, 255, 0.9)  0%, transparent 50%),
+        radial-gradient(ellipse 22% 180% at 96% 40%, rgba(0, 180, 255, 0.9)  0%, transparent 50%);
+      background-color: #3030C8;
+      filter: saturate(1.4) brightness(1.0) contrast(1.05);
+      animation: drift 18s ease-in-out infinite alternate;
+    }
+    @keyframes drift {
+      from { transform: translateX(0); }
+      to   { transform: translateX(-22%); }
+    }
+
+    /* ── NAV ─────────────────────────────── */
+    nav {
+      position: fixed;
+      inset: 0 0 auto 0;
+      z-index: 300;
+      padding: 1.5rem var(--pad);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: background 0.3s, border-bottom 0.3s;
+    }
+    nav.scrolled {
+      background: rgba(255,255,255,0.95);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--rule);
+    }
+    .nav-logo {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--black);
+      text-decoration: none;
+    }
+    .nav-links { display: flex; gap: 2.25rem; list-style: none; }
+    .nav-links a {
+      font-size: 0.78rem;
+      font-weight: 500;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--mid);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .nav-links a:hover { color: var(--black); }
+
+    /* ── HERO ─────────────────────────────── */
+    #hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background: var(--white);
+    }
+
+    /* gradient as top portion of hero */
+    .hero-mesh {
+      height: clamp(260px, 42vh, 420px);
+      position: relative;
+      overflow: hidden;
+    }
+    .hero-mesh .gmesh-inner { animation-duration: 20s; }
+
+    /* text on top of gradient */
+    .hero-over {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: flex-end;
+      padding: 0 var(--pad) 2rem;
+    }
+    .hero-kicker {
+      font-size: 0.72rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.75);
+      font-weight: 500;
+    }
+
+    .hero-lower {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 2.5rem var(--pad) 2.5rem;
+    }
+    .hero-h1 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: clamp(3.5rem, 9.5vw, 10.5rem);
+      font-weight: 700;
+      line-height: 0.93;
+      letter-spacing: -0.045em;
+      color: var(--black);
+    }
+    .hero-h1 .hi { color: var(--blue); }
+
+    .hero-foot {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 3rem;
+      align-items: end;
+      padding-top: 2rem;
+      border-top: 1px solid var(--rule);
+      margin-top: 2.5rem;
+    }
+    .hero-desc {
+      font-size: 1rem;
+      color: var(--mid);
+      line-height: 1.8;
+      max-width: 420px;
+    }
+    .hero-actions { display: flex; justify-content: flex-end; gap: 0.75rem; }
+
+    .btn {
+      display: inline-block;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      text-decoration: none;
+      padding: 0.8rem 1.6rem;
+      cursor: pointer;
+      border: 2px solid var(--black);
+      color: var(--black);
+      background: transparent;
+      transition: all 0.15s;
+    }
+    .btn:hover { background: var(--black); color: var(--white); }
+    .btn-fill { background: var(--blue); color: var(--white); border-color: var(--blue); }
+    .btn-fill:hover { background: #0030CC; border-color: #0030CC; color: var(--white); }
+
+    /* ── ACCORDION ────────────────────────── */
+    #sections { background: var(--white); }
+
+    .acc-row {
+      border-bottom: 1.5px solid var(--black);
+      background: var(--white);
+      transition: background 0.2s;
+      position: relative;
+    }
+    .acc-row:first-child { border-top: 1.5px solid var(--black); }
+
+    .acc-header {
+      display: grid;
+      grid-template-columns: 52px 1fr auto;
+      align-items: center;
+      gap: 1.5rem;
+      padding: 1.6rem var(--pad);
+      cursor: pointer;
+      user-select: none;
+    }
+    .acc-row:hover:not(.open) { background: var(--off); }
+
+    /* ── per-section open state ────────────────────────────
+       background always white for readability;
+       --pn is the only thing that differs — it colors the
+       title, accent line, numbers, and labels per section  */
+
+    .acc-row.open {
+      background: var(--white);
+      --pt: rgba(0,0,0,0.62);
+      --ps: #080808;
+      --pb: rgba(0,0,0,0.08);
+    }
+    .acc-row[data-i="0"].open { --pn: #EAB308; }   /* 01 About          – yellow         */
+    .acc-row[data-i="1"].open { --pn: #2563EB; }   /* 02 AI             – blue           */
+    .acc-row[data-i="2"].open { --pn: #EAB308; }   /* 03 Management     – yellow         */
+    .acc-row[data-i="3"].open { --pn: #2563EB; }   /* 04 Excel          – blue           */
+    .acc-row[data-i="4"].open { --pn: #EAB308; }   /* 05 Cross-Func     – yellow         */
+
+    .acc-num {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      color: var(--rule);
+      transition: color 0.2s;
+    }
+    .acc-row.open .acc-num { color: var(--pn); }
+
+    .acc-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: clamp(1.4rem, 3.5vw, 2.8rem);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      color: var(--black);
+      line-height: 1;
+      transition: color 0.2s;
+    }
+    .acc-row.open .acc-title { color: var(--pn); }
+
+    .acc-toggle {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.5rem;
+      font-weight: 300;
+      color: var(--mid);
+      line-height: 1;
+      width: 2rem;
+      text-align: right;
+      transition: transform 0.35s ease, color 0.2s;
+      flex-shrink: 0;
+    }
+    .acc-row.open .acc-toggle { transform: rotate(45deg); color: var(--pn); }
+
+    /* animated height – body color matches row */
+    .acc-body {
+      height: 0;
+      overflow: hidden;
+      transition: height 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+      background: inherit;
+    }
+    .acc-inner {
+      padding: 0 var(--pad) 3.5rem;
+      padding-left: calc(var(--pad) + 52px + 1.5rem);
+    }
+
+    /* accent line at top of expanded content */
+    .acc-line {
+      height: 2px;
+      background: var(--pn, var(--gold));
+      margin: 0 calc(-1 * var(--pad)) 2.5rem;
+      margin-left: calc(-1 * var(--pad) - 52px - 1.5rem);
+    }
+
+    .panel-grid {
+      display: grid;
+      grid-template-columns: 1.5fr 1fr;
+      gap: 4rem;
+      align-items: start;
+    }
+
+    .panel-text p {
+      font-size: 1.1rem;
+      color: var(--pt, rgba(255,255,255,0.78));
+      line-height: 1.85;
+      margin-bottom: 1.25rem;
+    }
+    .panel-text p:last-child { margin-bottom: 0; }
+    .panel-text strong { color: var(--ps, var(--white)); font-weight: 600; }
+
+    .panel-aside-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--pn, var(--gold));
+      margin-bottom: 1.1rem;
+      padding-bottom: 0.85rem;
+      border-bottom: 1px solid var(--pb, rgba(255,255,255,0.15));
+    }
+    .panel-list { list-style: none; display: flex; flex-direction: column; }
+    .panel-list li {
+      font-size: 1.05rem;
+      color: var(--pt, rgba(255,255,255,0.88));
+      padding: 0.75rem 0;
+      border-bottom: 1px solid var(--pb, rgba(255,255,255,0.1));
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .panel-list li:last-child { border-bottom: none; }
+    .panel-list span {
+      font-size: 0.85rem;
+      color: var(--pn, var(--gold));
+      font-weight: 600;
+    }
+
+    .panel-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0;
+      border: 1px solid var(--pb, rgba(255,255,255,0.15));
+      margin-top: 2.5rem;
+    }
+    .panel-stat {
+      padding: 1.5rem;
+      border-right: 1px solid var(--pb, rgba(255,255,255,0.15));
+    }
+    .panel-stat:last-child { border-right: none; }
+    .panel-stat-n {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 2.5rem;
+      font-weight: 700;
+      letter-spacing: -0.04em;
+      color: var(--pn, var(--gold));
+      line-height: 1;
+    }
+    .panel-stat-l {
+      font-size: 0.9rem;
+      color: var(--pt, rgba(255,255,255,0.6));
+      margin-top: 0.4rem;
+      line-height: 1.4;
+    }
+
+    /* tags adapt to section bg */
+    .tag-row { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1.75rem; }
+    .tag {
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      color: var(--ps, var(--white));
+      background: var(--pb, rgba(255,255,255,0.15));
+      border: 1px solid var(--pb, rgba(255,255,255,0.25));
+      padding: 0.4rem 0.95rem;
+    }
+
+    /* ── CONTACT ────────────────────────── */
+    #contact {
+      background: var(--black);
+      padding: 7rem var(--pad) 5rem;
+    }
+    .contact-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6rem;
+      align-items: end;
+    }
+    .contact-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: clamp(3rem, 7.5vw, 7.5rem);
+      font-weight: 700;
+      line-height: 0.93;
+      letter-spacing: -0.045em;
+      color: var(--white);
+    }
+    .contact-title em {
+      font-style: normal;
+      color: var(--gold);
+    }
+    .contact-note {
+      font-size: 1rem;
+      color: rgba(255,255,255,0.5);
+      line-height: 1.85;
+      margin-bottom: 2rem;
+    }
+    .contact-links { display: flex; flex-direction: column; gap: 0.75rem; }
+    .contact-link {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--white);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      letter-spacing: 0.01em;
+      transition: gap 0.2s, color 0.2s;
+    }
+    .contact-link:hover { color: var(--gold); gap: 1.25rem; }
+    .contact-link::before { content: '→'; }
+
+    footer {
+      background: var(--black);
+      border-top: 1px solid #222;
+      padding: 1.5rem var(--pad);
+      display: flex;
+      justify-content: space-between;
+    }
+    footer p {
+      font-size: 0.72rem;
+      color: #333;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    /* ── HERO INTRO ─────────────────────── */
+    .hero-intro {
+      max-width: 680px;
+      margin-top: 2.25rem;
+    }
+    .hero-intro p {
+      font-size: 1rem;
+      color: var(--mid);
+      line-height: 1.85;
+      margin-bottom: 0.85rem;
+    }
+    .hero-intro p:last-child { margin-bottom: 0; }
+
+    /* ── ASIDE DESC LIST (verbatim bullet labels) ── */
+    .panel-list-desc { list-style: none; }
+    .panel-list-desc li {
+      display: block;
+      font-size: 0.95rem;
+      color: var(--pt, rgba(0,0,0,0.6));
+      padding: 0.7rem 0;
+      border-bottom: 1px solid var(--pb, rgba(0,0,0,0.07));
+      line-height: 1.55;
+    }
+    .panel-list-desc li:last-child { border-bottom: none; }
+    .panel-list-desc li strong {
+      display: block;
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--pn, var(--gold));
+      margin-bottom: 0.2rem;
+    }
+
+    /* ── RESPONSIVE ─────────────────────── */
+    @media (max-width: 860px) {
+      .hero-foot { grid-template-columns: 1fr; gap: 1.5rem; }
+      .hero-actions { justify-content: flex-start; }
+      .acc-header { grid-template-columns: 36px 1fr auto; gap: 1rem; }
+      .acc-inner { padding-left: var(--pad); }
+      .panel-grid { grid-template-columns: 1fr; gap: 2.5rem; }
+      .panel-stats { grid-template-columns: 1fr 1fr; }
+      .contact-grid { grid-template-columns: 1fr; gap: 2.5rem; }
+      .nav-links { display: none; }
+    }
+    @media (max-width: 520px) {
+      .panel-stats { grid-template-columns: 1fr; }
+      .panel-stat { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.15); }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav id="nav">
+  <a href="#hero" class="nav-logo">Silvana Bernhardt</a>
+  <ul class="nav-links">
+    <li><a href="#sections">Work</a></li>
+    <li><a href="#contact">Contact</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+
+  <!-- gradient takes top half -->
+  <div class="hero-mesh gmesh">
+    <div class="gmesh-inner"></div>
+    <div class="hero-over">
+      <span class="hero-kicker">Finance · Strategy · AI · Process Improvement · New York, NY</span>
+    </div>
+  </div>
+
+  <!-- headline + CTA sit below gradient -->
+  <div class="hero-lower">
+    <h1 class="hero-h1">
+      Not your<br/>typical <span class="hi">finance</span><br/>mind.
+    </h1>
+    <div class="hero-intro">
+      <p>Hi, I'm Silvana. I work in Finance, but I'm probably not your typical finance person. I'm someone who thinks mess is fun if we get the chance to clean it. I thrive in roles that allow me to be creative, implement structure, and turn chaos into clarity.</p>
+      <p>Growing up in Argentina, I became fluent in constant change, uncertainty, and shifting financial landscapes. That environment gave me a unique blend of scrappy creativity and a relentless search for stability. It built a mindset I carry into every project: "There is no problem big enough that can't be fixed."</p>
+    </div>
+    <div class="hero-foot">
+      <div></div>
+      <div class="hero-actions">
+        <a href="#sections" class="btn">See My Work</a>
+        <a href="https://www.linkedin.com/in/silvanabernhardt/" target="_blank" rel="noopener" class="btn btn-fill">LinkedIn ↗</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ACCORDION -->
+<div id="sections">
+
+  <!-- 01 About Me -->
+  <div class="acc-row" data-i="0">
+    <div class="acc-header">
+      <span class="acc-num">01</span>
+      <span class="acc-title">About Me</span>
+      <span class="acc-toggle">+</span>
+    </div>
+    <div class="acc-body">
+      <div class="acc-inner">
+        <div class="acc-line"></div>
+        <div class="panel-grid">
+          <div class="panel-text">
+            <p>I am the person who takes a blurry idea and translates it into something simple, structured, and useful. I'm the one you have a two-hour brainstorming session with, only for me to finish by saying, "Okay, so what you actually need is this," and handing you the roadmap.</p>
+            <p>I thrive as <strong>"the fixer"</strong>—someone who doesn't just optimize my own workflow, but re-engineers the team's processes to make everyone's life easier. My goal is to empower people with tools that provide independence, reliability, and clarity.</p>
+            <p>Currently, I am leading the FP&amp;A function for a high-growth SaaS company as their <strong>first and sole hire</strong>. This "scrappy" leadership is backed by a diverse professional experience:</p>
+            <p><strong>Global Standards at Accenture:</strong> Serviced California-based GTM teams, mastering global standard practices and delivering high-level financial management alongside inspiring leaders across the globe.</p>
+            <p><strong>Strategic Transformation:</strong> Supported a massive decentralization project for a major healthcare provider in Argentina, revolutionizing national operations and regional P&amp;L accountability.</p>
+            <p><strong>The HR Foundation:</strong> I began my career in Recruiting and HR Reporting. This experience was pivotal—it taught me to view a company as a complex ecosystem where people and processes are inseparable.</p>
+          </div>
+          <div>
+            <div class="panel-aside-label">At a glance</div>
+            <ul class="panel-list-desc">
+              <li><strong>Expertise</strong>10+ years in corporate functions. Last 5+ years in Strategic Finance &amp; FP&amp;A.</li>
+              <li><strong>Foundations</strong>Early career in HR (Recruitment &amp; People Analytics).</li>
+              <li><strong>Versatility</strong>Deep experience across 4 distinct industries (SaaS, Consulting, Healthcare, IT).</li>
+              <li><strong>Stakeholders</strong>Trusted partner to the CFO. External: Board members, banks, funding companies, Series B investors.</li>
+              <li><strong>Multi-cultural Teams</strong>Collaborated with teams across the US, India, Europe, UK, UAE, the Philippines, and Argentina.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 02 AI Assisted Process Improvement -->
+  <div class="acc-row" data-i="1">
+    <div class="acc-header">
+      <span class="acc-num">02</span>
+      <span class="acc-title">AI Assisted Process Improvement</span>
+      <span class="acc-toggle">+</span>
+    </div>
+    <div class="acc-body">
+      <div class="acc-inner">
+        <div class="acc-line"></div>
+        <div class="panel-grid">
+          <div class="panel-text">
+            <p>I'm currently discovering how AI tools can help make the startup and small company world easier. So far, I've leveraged <strong>Gemini, ChatGPT, and Claude</strong> to architect complex Excel logic, cutting manual formula-building time significantly.</p>
+            <p>Developed custom prompts and workflows in Claude to <strong>automate cost-review reporting and NetSuite data cleaning</strong>, making space for value-adding analysis.</p>
+            <p>Used Claude to map and reconcile messy customer data between ERP (NetSuite) systems and Excel. And used <strong>Claude Code to build this very portfolio site</strong> — with no website development knowledge.</p>
+            <div class="tag-row">
+              <span class="tag">Claude</span>
+              <span class="tag">ChatGPT</span>
+              <span class="tag">Gemini</span>
+              <span class="tag">NetSuite</span>
+              <span class="tag">Excel</span>
+            </div>
+          </div>
+          <div>
+            <div class="panel-aside-label">Key Outcomes</div>
+            <ul class="panel-list">
+              <li>FP&amp;A value-adding time <span>↑ More</span></li>
+              <li>Reporting &amp; data cleaning <span>↓ Less</span></li>
+              <li>P&amp;L cost review <span>Real-time</span></li>
+              <li>Pivot tables replaced <span>Dynamic</span></li>
+              <li>Portfolio built with <span>Claude Code</span></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 03 Leadership & Management -->
+  <div class="acc-row" data-i="2">
+    <div class="acc-header">
+      <span class="acc-num">03</span>
+      <span class="acc-title">Leadership &amp; Management</span>
+      <span class="acc-toggle">+</span>
+    </div>
+    <div class="acc-body">
+      <div class="acc-inner">
+        <div class="acc-line"></div>
+        <div class="panel-grid">
+          <div class="panel-text">
+            <p><strong>Closing the Gap:</strong> Optimized monthly close coordination, reducing P&amp;L availability lag by 10 days within the first few months of implementation.</p>
+            <p><strong>Team Alignment &amp; Efficiency:</strong> Created a centralized, automated Finance Operations Calendar to ensure 100% compliance with global reporting deadlines. Proposed proactive "housekeeping" tasks to surface cost efficiency opportunities — quarterly reviews of expiring subscriptions and vendor contracts with automatic renewal reminders.</p>
+            <p><strong>Onboarding Excellence:</strong> Served as a Team Ambassador at Accenture; created the "Onboarding Blueprint" — job aids and training docs — that cut new-hire ramp-up time significantly.</p>
+            <p><strong>Mentorship:</strong> Actively mentored junior analysts on technical Excel skills and "Big Picture" financial thinking.</p>
+          </div>
+          <div>
+            <div class="panel-aside-label">Capabilities</div>
+            <ul class="panel-list">
+              <li>Monthly close optimization</li>
+              <li>Reporting deadline management</li>
+              <li>Onboarding &amp; documentation</li>
+              <li>Junior analyst mentoring</li>
+              <li>Vendor cost management</li>
+              <li>C-suite &amp; board communication</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 04 Process Improvement & Strategic Modelling -->
+  <div class="acc-row" data-i="3">
+    <div class="acc-header">
+      <span class="acc-num">04</span>
+      <span class="acc-title">Process Improvement &amp; Strategic Modelling</span>
+      <span class="acc-toggle">+</span>
+    </div>
+    <div class="acc-body">
+      <div class="acc-inner">
+        <div class="acc-line"></div>
+        <div class="panel-grid">
+          <div class="panel-text">
+            <p><strong>SaaS Metrics Transformation:</strong> Converted 2 static business-unit reports into 10 dynamic product P&amp;Ls with full SaaS metrics — MRR, ARR, Churn, GRR, NRR, CAC — enabling consolidated and product cohort analysis.</p>
+            <p><strong>Audit-Ready Reconciliations:</strong> Built a Trial Balance vs. General Ledger framework that eliminated manual discrepancies and streamlined year-end audit support for the Finance and Accounting team.</p>
+            <p><strong>Global Payroll Transformation:</strong> Inherited a fragmented payroll process across US, UK, UAE, and India that took 8 days to close. Re-engineered the workflow in NetSuite/Excel to deliver clean, reconciled data by Day 2.</p>
+            <p><strong>Reporting 2.0:</strong> Integrated separate reporting deliverables into a single source of truth — enhanced with Pivot Charts, Tables, slicers, and timelines for dynamic, self-serve navigation.</p>
+            <div class="tag-row">
+              <span class="tag">SaaS Metrics</span>
+              <span class="tag">NetSuite</span>
+              <span class="tag">Excel</span>
+              <span class="tag">Power Query</span>
+              <span class="tag">Dynamic Arrays</span>
+              <span class="tag">Pivot Charts</span>
+            </div>
+          </div>
+          <div>
+            <div class="panel-aside-label">Key Projects</div>
+            <ul class="panel-list">
+              <li>SaaS P&amp;Ls built <span>10 products</span></li>
+              <li>Payroll close cycle <span>8d → Day 2</span></li>
+              <li>GL discrepancies <span>Eliminated</span></li>
+              <li>P&amp;L review time <span>Hours → Min</span></li>
+              <li>Reporting source <span>One truth</span></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 05 Business Partnering -->
+  <div class="acc-row" data-i="4">
+    <div class="acc-header">
+      <span class="acc-num">05</span>
+      <span class="acc-title">Business Partnering</span>
+      <span class="acc-toggle">+</span>
+    </div>
+    <div class="acc-body">
+      <div class="acc-inner">
+        <div class="acc-line"></div>
+        <div class="panel-grid">
+          <div class="panel-text">
+            <p><strong>From Silos to Regions:</strong> Led a massive cultural shift for an Argentine healthcare leader — moving decision-making from 2 cities to 16 accountable regions. Built the models that gave regional managers true P&amp;L ownership, and trained them in financial planning, budgeting, and cross-functional thinking.</p>
+            <p><strong>GTM Empowerment:</strong> Proactively built "Finance for Non-Finance" guides for Go-To-Market teams, transforming them from data providers into strategic partners who understand their own ROI.</p>
+            <p><strong>HR Roots:</strong> Documented all organizational chart job descriptions, collaborated across every company function for recruiting and HR services. Implemented the company's HR system from scratch — trained users, created job aids, maintained updates, and integrated company workflows into the tool.</p>
+          </div>
+          <div>
+            <div class="panel-aside-label">Teams Partnered</div>
+            <ul class="panel-list">
+              <li>Go-To-Market &amp; Sales</li>
+              <li>Regional Operations</li>
+              <li>People &amp; HR</li>
+              <li>Executive &amp; Board</li>
+              <li>Finance &amp; Accounting</li>
+              <li>External: Banks &amp; Investors</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- CONTACT -->
+<section id="contact">
+  <div class="contact-grid">
+    <div>
+      <p style="font-size:0.68rem;letter-spacing:0.22em;text-transform:uppercase;color:rgba(255,255,255,0.3);margin-bottom:1.5rem;font-weight:600;">Contact</p>
+      <div class="contact-title">Let's build<br/>something<br/><em>better.</em></div>
+    </div>
+    <div>
+      <p class="contact-note">Open to strategic finance roles, consulting engagements, and conversations about the future of finance operations. Particularly interested in organisations serious about AI and automation.</p>
+      <div class="contact-links">
+        <a href="https://www.linkedin.com/in/silvanabernhardt/" target="_blank" rel="noopener" class="contact-link">Connect on LinkedIn</a>
+        <a href="mailto:sbsilvanabernhardt@gmail.com" class="contact-link">sbsilvanabernhardt@gmail.com</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p>© 2026 Silvana Bernhardt</p>
+  <p>Finance · Strategy · AI</p>
+</footer>
+
+<script>
+  // Nav
+  const nav = document.getElementById('nav');
+  window.addEventListener('scroll', () => {
+    nav.classList.toggle('scrolled', window.scrollY > 40);
+  }, { passive: true });
+
+  // Accordion
+  document.querySelectorAll('.acc-row').forEach(row => {
+    const header = row.querySelector('.acc-header');
+    const body   = row.querySelector('.acc-body');
+    const inner  = row.querySelector('.acc-inner');
+
+    header.addEventListener('click', () => {
+      const isOpen = row.classList.contains('open');
+
+      // close all
+      document.querySelectorAll('.acc-row.open').forEach(r => {
+        r.classList.remove('open');
+        r.querySelector('.acc-body').style.height = '0';
+      });
+
+      if (!isOpen) {
+        row.classList.add('open');
+        body.style.height = inner.scrollHeight + 'px';
+      }
+    });
+  });
+
+  // open first by default
+  const first = document.querySelector('.acc-row');
+  first.classList.add('open');
+  first.querySelector('.acc-body').style.height =
+    first.querySelector('.acc-inner').scrollHeight + 'px';
+</script>
+</body>
+</html>

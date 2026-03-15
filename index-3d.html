@@ -1,0 +1,1059 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Silvana Bernhardt — Finance & Strategy</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; cursor: none !important; }
+
+    :root {
+      --black: #0a0a0a;
+      --white: #ffffff;
+      --off:   #d4d0c8;
+      --mid:   #888880;
+      --dur:   .72s;
+      --ease:  cubic-bezier(.16, 1, .3, 1);
+    }
+
+    html, body {
+      width: 100%; height: 100%;
+      overflow: hidden;
+      background: linear-gradient(150deg, #0d1726 0%, #091221 100%);
+      color: var(--black);
+      font-family: 'Inter', sans-serif;
+      font-size: 16px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── CURSOR ──────────────────────────────── */
+    #cursorDot {
+      position: fixed; z-index: 9999; pointer-events: none;
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--white);
+      will-change: transform;
+      mix-blend-mode: difference;
+    }
+    #cursorRing {
+      position: fixed; z-index: 9998; pointer-events: none;
+      width: 40px; height: 40px; border-radius: 50%;
+      border: 1px solid rgba(255,255,255,.32);
+      will-change: transform;
+      transition: width .22s var(--ease), height .22s var(--ease);
+    }
+    #cursorRing.hover { width: 56px; height: 56px; }
+
+    /* ── PROGRESS BAR ───────────────────────── */
+    #progress {
+      position: fixed; top: 0; left: 0; z-index: 999;
+      height: 2px; background: rgba(255,255,255,.7); width: 0%;
+      transition: width .45s var(--ease);
+    }
+
+    /* ── DOT GRID BACKGROUND ─────────────────── */
+    #bgGrid {
+      position: fixed; inset: 0; z-index: 0;
+      background-image: radial-gradient(rgba(255,255,255,.09) 1px, transparent 1px);
+      background-size: 22px 22px;
+      pointer-events: none;
+    }
+
+    /* ── NAV ─────────────────────────────────── */
+    #nav {
+      position: fixed; inset: 0 0 auto 0; z-index: 400;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1.8rem clamp(1.5rem, 4vw, 4rem);
+    }
+    .nav-logo {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: .75rem; font-weight: 700; letter-spacing: .14em;
+      text-transform: uppercase; color: var(--white);
+      text-decoration: none;
+      opacity: 0; transform: translateY(-6px);
+      transition: opacity .5s var(--ease), transform .5s var(--ease);
+    }
+    .nav-logo.vis { opacity: 1; transform: translateY(0); }
+    .nav-right { display: flex; gap: 1.8rem; align-items: center; }
+    .nav-link {
+      font-size: .7rem; font-weight: 600; letter-spacing: .12em;
+      text-transform: uppercase; color: rgba(255,255,255,.65); text-decoration: none;
+      opacity: 0; transform: translateY(-6px);
+      transition: opacity .5s var(--ease) var(--nd, 0ms),
+                  transform .5s var(--ease) var(--nd, 0ms);
+    }
+    .nav-link:nth-child(1) { --nd: 50ms; }
+    .nav-link:nth-child(2) { --nd: 100ms; }
+    .nav-link.vis { opacity: 1; transform: translateY(0); }
+
+    /* ── HERO ────────────────────────────────── */
+    #hero {
+      position: fixed; inset: 0; z-index: 300;
+      display: flex; align-items: center; justify-content: center;
+      padding: 0 clamp(2rem, 6vw, 6rem);
+      pointer-events: none;
+      transition: opacity .65s var(--ease), transform .65s var(--ease);
+    }
+    #hero.out {
+      opacity: 0; transform: scale(.96) translateY(-18px);
+      pointer-events: none;
+    }
+
+    /* two-column grid inside hero */
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: clamp(3rem, 6vw, 7rem);
+      align-items: center;
+      max-width: 1100px; width: 100%;
+    }
+
+    /* ── LEFT: name ── */
+    .hero-name {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: clamp(3rem, 8vw, 8.5rem);
+      font-weight: 700; letter-spacing: -.055em; line-height: .87;
+      color: var(--white);
+    }
+    .hero-line { overflow: hidden; display: block; }
+    .hero-word {
+      display: inline-block;
+      transform: translateY(108%);
+      transition: transform .9s var(--ease) var(--wd, 0ms);
+    }
+    #hero.in .hero-word { transform: translateY(0); }
+    .hero-word:nth-child(1) { --wd: 0ms; }
+    .hero-word:nth-child(2) { --wd: 85ms; }
+
+    .hero-sub {
+      margin-top: 1rem;
+      font-size: clamp(.6rem, .9vw, .76rem); font-weight: 500;
+      letter-spacing: .2em; text-transform: uppercase;
+      color: rgba(255,255,255,.38);
+      opacity: 0; transform: translateY(8px);
+      transition: opacity .6s var(--ease) .3s, transform .6s var(--ease) .3s;
+    }
+    #hero.in .hero-sub { opacity: 1; transform: translateY(0); }
+
+    /* ── RIGHT: intro ── */
+    .hero-right { display: flex; flex-direction: column; gap: 0; }
+
+    .hero-tagline-wrap { overflow: hidden; margin-bottom: 1.4rem; }
+    .hero-tagline {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: clamp(1.5rem, 2.8vw, 2.5rem);
+      font-weight: 700; letter-spacing: -.04em; line-height: 1.08;
+      color: var(--white);
+      transform: translateY(108%);
+      display: block;
+      transition: transform .9s var(--ease) .15s;
+    }
+    #hero.in .hero-tagline { transform: translateY(0); }
+
+    .hero-intro {
+      font-size: clamp(.78rem, 1.1vw, .92rem); line-height: 1.75;
+      color: rgba(255,255,255,.52); max-width: 44ch;
+      margin-bottom: 1.2rem;
+      opacity: 0; transform: translateY(12px);
+      transition: opacity .65s var(--ease) .42s, transform .65s var(--ease) .42s;
+    }
+    .hero-intro + .hero-intro { margin-top: -.3rem; }
+    #hero.in .hero-intro { opacity: 1; transform: translateY(0); }
+    .hero-intro strong { color: var(--white); font-weight: 600; }
+
+    .hero-actions {
+      display: flex; gap: .9rem; flex-wrap: wrap; margin-top: .4rem;
+      opacity: 0; transform: translateY(10px);
+      transition: opacity .5s var(--ease) .62s, transform .5s var(--ease) .62s;
+      pointer-events: none;
+    }
+    #hero.in .hero-actions { opacity: 1; transform: translateY(0); pointer-events: auto; }
+
+    .h-btn {
+      font-size: .68rem; font-weight: 700; letter-spacing: .14em;
+      text-transform: uppercase; text-decoration: none;
+      border-radius: 100px; padding: .62rem 1.35rem;
+      transition: background .2s, color .2s, border-color .2s;
+    }
+    .h-btn-ghost {
+      color: var(--black);
+      background: var(--white);
+      border: 1.5px solid var(--white);
+    }
+    .h-btn-ghost:hover { background: rgba(255,255,255,.88); border-color: rgba(255,255,255,.88); }
+    .h-btn-fill {
+      color: var(--white); background: var(--black);
+      border: 1.5px solid var(--black);
+    }
+    .h-btn-fill:hover { background: #333; border-color: #333; }
+
+    .hero-hint {
+      position: absolute; bottom: clamp(2rem, 4.5vh, 4rem);
+      left: 50%; transform: translateX(-50%);
+      display: flex; flex-direction: column; align-items: center; gap: .5rem;
+      font-size: .56rem; font-weight: 600; letter-spacing: .2em;
+      text-transform: uppercase; color: rgba(255,255,255,.28);
+      opacity: 0;
+      transition: opacity .6s var(--ease) .8s;
+      pointer-events: none;
+    }
+    #hero.in .hero-hint { opacity: 1; }
+    .hint-line {
+      width: 1px; height: 28px;
+      background: linear-gradient(to bottom, rgba(255,255,255,.28), transparent);
+      animation: pulse 2.4s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%,100% { opacity: .35; transform: scaleY(1); }
+      50%      { opacity: 1;   transform: scaleY(1.35); }
+    }
+
+    /* ── CONTACT SECTION ─────────────────────── */
+    #contactSect {
+      position: fixed; inset: 0; z-index: 250;
+      background: var(--black);
+      display: flex; align-items: center; justify-content: center;
+      padding: 0 clamp(2rem, 6vw, 6rem);
+      opacity: 0; pointer-events: none;
+      transition: opacity .65s var(--ease);
+    }
+    #contactSect.vis { opacity: 1; pointer-events: auto; }
+
+    .ct-inner { max-width: 900px; width: 100%; }
+    .ct-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: clamp(3rem, 6vw, 7rem); align-items: center;
+    }
+    .ct-eyebrow {
+      font-size: .58rem; font-weight: 700; letter-spacing: .22em;
+      text-transform: uppercase; color: rgba(255,255,255,.3);
+      margin-bottom: 1.5rem;
+    }
+    .ct-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: clamp(2.5rem, 5.5vw, 5.5rem);
+      font-weight: 700; letter-spacing: -.05em; line-height: .9;
+      color: var(--white);
+    }
+    .ct-title em { font-style: normal; }
+    .ct-note {
+      font-size: clamp(.8rem, 1.15vw, .94rem); line-height: 1.78;
+      color: rgba(255,255,255,.5); margin-bottom: 2.5rem;
+    }
+    .ct-links { display: flex; flex-direction: column; gap: 0; margin-bottom: 3rem; }
+    .ct-link {
+      font-size: clamp(.82rem, 1.15vw, .94rem); font-weight: 500;
+      color: var(--white); text-decoration: none;
+      border-bottom: 1px solid rgba(255,255,255,.12);
+      padding: .9rem 0;
+      transition: color .2s, border-color .2s;
+    }
+    .ct-link:first-child { border-top: 1px solid rgba(255,255,255,.12); }
+    .ct-link:hover { color: rgba(255,255,255,.85); border-color: rgba(255,255,255,.4); }
+    .ct-foot {
+      font-size: .54rem; letter-spacing: .16em; text-transform: uppercase;
+      color: rgba(255,255,255,.18);
+    }
+    .ct-back {
+      position: absolute; bottom: 2.5rem; left: 50%;
+      transform: translateX(-50%);
+      display: flex; flex-direction: column; align-items: center; gap: .5rem;
+      font-size: .56rem; font-weight: 600; letter-spacing: .2em;
+      text-transform: uppercase; color: rgba(255,255,255,.22);
+      cursor: pointer; pointer-events: auto;
+      transition: color .2s;
+    }
+    .ct-back:hover { color: rgba(255,255,255,.5); }
+    .ct-back-line {
+      width: 1px; height: 28px;
+      background: linear-gradient(to bottom, transparent, rgba(255,255,255,.2));
+      animation: pulseUp 2.4s ease-in-out infinite;
+    }
+    @keyframes pulseUp {
+      0%,100% { opacity: .35; transform: scaleY(1); }
+      50%      { opacity: 1;   transform: scaleY(1.35); }
+    }
+
+    @media (max-width: 720px) {
+      .hero-grid  { grid-template-columns: 1fr; gap: 2.5rem; }
+      .hero-name  { font-size: clamp(3rem, 12vw, 5rem); }
+      .ct-grid    { grid-template-columns: 1fr; gap: 2.5rem; }
+    }
+
+    /* ── STAGE ───────────────────────────────── */
+    #stage {
+      position: fixed; inset: 0; z-index: 200;
+      display: flex; align-items: center; justify-content: center;
+      perspective: 1400px;
+      perspective-origin: 50% 54%;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity .6s var(--ease);
+    }
+    #stage.vis { opacity: 1; pointer-events: auto; }
+
+    #carousel {
+      position: relative;
+      width: min(1020px, 92vw);
+      height: min(600px, 82vh);
+      transform-style: preserve-3d;
+    }
+
+    /* ── CARDS ───────────────────────────────── */
+    .c-card {
+      position: absolute; inset: 0;
+      background: var(--white);
+      border-radius: 22px;
+      overflow: hidden;
+      transition:
+        transform  var(--dur) var(--ease),
+        opacity    var(--dur) var(--ease),
+        box-shadow var(--dur) var(--ease);
+      will-change: transform, opacity;
+    }
+    /* clicking inactive cards navigates to them */
+    .c-card:not([data-off="0"]) { cursor: pointer !important; }
+
+    /* ── 3D POSITIONS ────────────────────────── */
+    .c-card[data-off="-2"] {
+      transform: translateX(-71%) rotateY(54deg) translateZ(-180px) scale(.67);
+      opacity: .46; box-shadow: 0 6px 20px rgba(0,0,0,.08);
+    }
+    .c-card[data-off="-1"] {
+      transform: translateX(-40%) rotateY(30deg) translateZ(30px) scale(.85);
+      opacity: .80; box-shadow: 0 14px 50px rgba(0,0,0,.14);
+    }
+    .c-card[data-off="0"] {
+      transform: translateX(0)    rotateY(0deg)  translateZ(260px) scale(1);
+      opacity: 1;   box-shadow: 0 60px 180px rgba(0,0,0,.65), 0 0 0 1px rgba(255,255,255,.06);
+    }
+    .c-card[data-off="1"] {
+      transform: translateX(40%)  rotateY(-30deg) translateZ(30px) scale(.85);
+      opacity: .80; box-shadow: 0 14px 50px rgba(0,0,0,.14);
+    }
+    .c-card[data-off="2"] {
+      transform: translateX(71%)  rotateY(-54deg) translateZ(-180px) scale(.67);
+      opacity: .46; box-shadow: 0 6px 20px rgba(0,0,0,.08);
+    }
+    .c-card[data-off="-3"],
+    .c-card[data-off="-4"],
+    .c-card[data-off="-5"],
+    .c-card[data-off="3"],
+    .c-card[data-off="4"],
+    .c-card[data-off="5"] {
+      transform: translateX(0) rotateY(0deg) translateZ(-800px) scale(.2);
+      opacity: 0; pointer-events: none;
+    }
+
+    /* ── CARD INTERIOR ───────────────────────── */
+    .card-inner {
+      height: 100%;
+      display: flex; flex-direction: column;
+      padding: clamp(1.1rem, 1.8vw, 1.7rem);
+    }
+
+    /* Header — always visible on all cards */
+    .card-head {
+      flex-shrink: 0;
+      display: flex; align-items: baseline; gap: .85rem;
+      padding-bottom: .7rem;
+      border-bottom: 1px solid rgba(0,0,0,.09);
+      margin-bottom: .85rem;
+    }
+    .card-num {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: .54rem; font-weight: 700; letter-spacing: .22em;
+      text-transform: uppercase; color: rgba(0,0,0,.28); flex-shrink: 0;
+    }
+    .card-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: clamp(1.2rem, 2.4vw, 1.9rem);
+      font-weight: 700; letter-spacing: -.04em; line-height: .96;
+      color: var(--black);
+    }
+
+    /* Body — fades in only on active card */
+    .card-body {
+      flex: 1; overflow: hidden;
+      opacity: 0; transform: translateY(12px);
+      pointer-events: none;
+      transition: opacity .48s var(--ease) .2s,
+                  transform .48s var(--ease) .2s;
+    }
+    .c-card[data-off="0"] .card-body {
+      opacity: 1; transform: translateY(0);
+      pointer-events: auto;
+    }
+
+    /* Body typography — compact to fit everything without scrolling */
+    .cb-p {
+      font-size: clamp(.7rem, 1.05vw, .82rem); line-height: 1.6;
+      color: rgba(0,0,0,.6); margin-bottom: .5rem;
+    }
+    .cb-p:last-child { margin-bottom: 0; }
+    .cb-p strong { color: var(--black); font-weight: 600; }
+
+    .cb-cols {
+      display: grid; grid-template-columns: 1fr 1fr; gap: .5rem 0;
+      position: relative;
+    }
+    .cb-cols > div { padding: 0 1.4rem; }
+    .cb-cols > div:first-child { padding-left: 0; border-right: 1px solid rgba(0,0,0,.08); }
+    .cb-cols > div:last-child  { padding-right: 0; }
+    .cb-label {
+      font-size: .52rem; font-weight: 700; letter-spacing: .18em;
+      text-transform: uppercase; color: rgba(0,0,0,.28); margin-bottom: .35rem;
+    }
+    .cb-list { list-style: none; }
+    .cb-list li {
+      font-size: clamp(.66rem, 1vw, .78rem); line-height: 1.45;
+      color: rgba(0,0,0,.68);
+      padding: .13rem 0; border-bottom: 1px solid rgba(0,0,0,.06);
+    }
+    .cb-list li:last-child { border-bottom: none; }
+
+    .cb-stats { display: flex; gap: 1.2rem; margin: .65rem 0; }
+    .cb-stat-n {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: clamp(1.1rem, 2vw, 1.55rem); font-weight: 700;
+      letter-spacing: -.04em; color: var(--black); display: block;
+    }
+    .cb-stat-l {
+      font-size: .52rem; font-weight: 600; letter-spacing: .14em;
+      text-transform: uppercase; color: rgba(0,0,0,.3);
+    }
+
+    .cb-kv { list-style: none; margin-bottom: .65rem; }
+    .cb-kv li {
+      display: flex; justify-content: space-between; align-items: baseline;
+      font-size: clamp(.66rem, 1vw, .78rem);
+      color: rgba(0,0,0,.65);
+      padding: .18rem 0; border-bottom: 1px solid rgba(0,0,0,.06);
+    }
+    .cb-kv li:last-child { border-bottom: none; }
+    .cb-kv-v { font-weight: 600; color: var(--black); }
+
+    .cb-tags { display: flex; flex-wrap: wrap; gap: .28rem; margin: .5rem 0; }
+    .cb-tag {
+      font-size: .56rem; font-weight: 600; letter-spacing: .05em;
+      padding: .18rem .55rem;
+      border: 1px solid rgba(0,0,0,.16); border-radius: 100px;
+      color: rgba(0,0,0,.55);
+    }
+
+    .cb-cta {
+      display: inline-flex; align-items: center; gap: .35rem;
+      font-size: .62rem; font-weight: 700; letter-spacing: .12em;
+      text-transform: uppercase; color: var(--black);
+      text-decoration: none;
+      border-bottom: 1.5px solid var(--black); padding-bottom: .08rem;
+      margin-top: .4rem;
+    }
+
+    /* ── DOT NAV ─────────────────────────────── */
+    #dotNav {
+      position: fixed; right: 2rem; top: 50%; z-index: 400;
+      transform: translateY(-50%);
+      display: flex; flex-direction: column; gap: .55rem;
+      opacity: 0; transition: opacity .5s var(--ease);
+    }
+    #dotNav.vis { opacity: 1; }
+    .d-dot {
+      width: 5px; height: 5px; border-radius: 50%;
+      background: rgba(255,255,255,.25); cursor: pointer;
+      transition: background .3s, transform .3s;
+    }
+    .d-dot.active { background: var(--white); transform: scale(1.8); }
+    .d-dot:hover  { background: rgba(255,255,255,.55); }
+
+    /* ── ARROWS ──────────────────────────────── */
+    .arrow {
+      position: fixed; top: 50%; z-index: 400;
+      transform: translateY(-50%);
+      width: 44px; height: 44px; border-radius: 50%;
+      border: 1px solid rgba(255,255,255,.2);
+      background: rgba(255,255,255,.08);
+      backdrop-filter: blur(12px);
+      color: var(--white);
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0;
+      transition: opacity .5s var(--ease), border-color .2s, background .2s;
+    }
+    .arrow.vis { opacity: 1; }
+    .arrow.dim { opacity: .22 !important; pointer-events: none !important; }
+    .arrow:hover { border-color: rgba(255,255,255,.6); background: rgba(255,255,255,.15); }
+    #arrowPrev { left: 1.8rem; }
+    #arrowNext { right: 4.5rem; }
+    .arrow svg { width: 17px; height: 17px; }
+
+    /* ── COUNTER ─────────────────────────────── */
+    #counter {
+      position: fixed; left: clamp(1.5rem, 4vw, 4rem); bottom: 2.5rem; z-index: 400;
+      font-size: .58rem; font-weight: 700; letter-spacing: .2em;
+      text-transform: uppercase; color: rgba(255,255,255,.38);
+      opacity: 0; transition: opacity .5s var(--ease);
+      overflow: hidden;
+    }
+    #counter.vis { opacity: 1; }
+    #cCurrent {
+      color: var(--white); display: inline-block;
+      transition: transform .38s var(--ease), opacity .25s;
+    }
+
+    /* ── TOP SECTION LABEL ───────────────────── */
+    #sectionLbl {
+      position: fixed; left: 50%; top: 1.6rem; z-index: 400;
+      transform: translateX(-50%);
+      font-size: .56rem; font-weight: 700; letter-spacing: .2em;
+      text-transform: uppercase; color: rgba(255,255,255,.35);
+      white-space: nowrap;
+      opacity: 0; transition: opacity .4s var(--ease);
+    }
+    #sectionLbl.vis { opacity: 1; }
+
+    /* ── RESPONSIVE ──────────────────────────── */
+    @media (max-width: 640px) {
+      #arrowPrev, #arrowNext { display: none; }
+      .cb-cols { grid-template-columns: 1fr; }
+      #carousel { height: min(600px, 78vh); }
+      *, *::before, *::after { cursor: auto !important; }
+      #cursorDot, #cursorRing { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="bgGrid"></div>
+<div id="progress"></div>
+<div id="cursorDot"></div>
+<div id="cursorRing"></div>
+
+<!-- NAV -->
+<nav id="nav">
+  <a href="#" class="nav-logo" id="navLogo">Silvana Bernhardt</a>
+  <div class="nav-right">
+    <a href="https://www.linkedin.com/in/silvanabernhardt/" target="_blank" rel="noopener" class="nav-link">LinkedIn</a>
+    <a href="mailto:sbsilvanabernhardt@gmail.com" class="nav-link">Email</a>
+  </div>
+</nav>
+
+<!-- TOP LABEL -->
+<div id="sectionLbl"></div>
+
+<!-- HERO -->
+<div id="hero">
+  <div class="hero-grid">
+    <!-- left: name -->
+    <div>
+      <h1 class="hero-name">
+        <span class="hero-line"><span class="hero-word">Silvana</span></span>
+        <span class="hero-line"><span class="hero-word">Bernhardt</span></span>
+      </h1>
+      <p class="hero-sub">Finance · Strategy · AI · New York</p>
+    </div>
+    <!-- right: intro -->
+    <div class="hero-right">
+      <div class="hero-tagline-wrap">
+        <span class="hero-tagline">Not your typical<br/>finance mind.</span>
+      </div>
+      <p class="hero-intro">Hi, I'm Silvana. I work in Finance, but I'm probably not your typical finance person. I'm someone who thinks mess is fun if we get the chance to clean it. I thrive in roles that allow me to be creative, implement structure, and turn chaos into clarity.</p>
+      <p class="hero-intro" style="transition-delay:.52s">Growing up in Argentina, I became fluent in constant change, uncertainty, and shifting financial landscapes. That environment gave me a unique blend of scrappy creativity and a relentless search for stability. It built a mindset I carry into every project: <strong>"There is no problem big enough that can't be fixed."</strong></p>
+      <div class="hero-actions">
+        <button class="h-btn h-btn-ghost" id="heroSeeWork">Know more about me</button>
+        <a href="https://www.linkedin.com/in/silvanabernhardt/" target="_blank" rel="noopener" class="h-btn h-btn-fill">LinkedIn ↗</a>
+      </div>
+    </div>
+  </div>
+  <div class="hero-hint">
+    <span>Scroll to explore</span>
+    <div class="hint-line"></div>
+  </div>
+</div>
+
+<!-- 3D STAGE -->
+<div id="stage">
+  <div id="carousel">
+
+    <!-- 01 About Me -->
+    <div class="c-card" data-i="0">
+      <div class="card-inner">
+        <div class="card-head">
+          <span class="card-num">01</span>
+          <h2 class="card-title">About Me</h2>
+        </div>
+        <div class="card-body">
+          <div class="cb-cols">
+            <div>
+              <p class="cb-p">I am the person who takes a blurry idea and translates it into something simple, structured, and useful. I'm the one you have a two-hour brainstorming session with, only for me to finish by saying, "Okay, so what you actually need is this," and handing you the roadmap.</p>
+              <p class="cb-p">I thrive as <strong>"the fixer"</strong> — someone who doesn't just optimize my own workflow, but re-engineers the team's processes to make everyone's life easier. My goal is to empower people with tools that provide independence, reliability, and clarity.</p>
+              <p class="cb-p">Currently, I am leading the FP&amp;A function for a high-growth SaaS company as their <strong>first and sole hire</strong>. This "scrappy" leadership is backed by a diverse professional experience:</p>
+              <p class="cb-p"><strong>Global Standards at Accenture:</strong> Serviced California-based GTM teams, mastering global standard practices and delivering high-level financial management alongside inspiring leaders across the globe.</p>
+              <p class="cb-p"><strong>Strategic Transformation:</strong> Supported a massive decentralization project for a major healthcare provider in Argentina, revolutionizing national operations and regional P&amp;L accountability.</p>
+              <p class="cb-p"><strong>The HR Foundation:</strong> I began my career in Recruiting and HR Reporting. This experience was pivotal — it taught me to view a company as a complex ecosystem where people and processes are inseparable.</p>
+            </div>
+            <div>
+              <p class="cb-label">At a glance</p>
+              <ul class="cb-list">
+                <li><strong>Expertise</strong> — 10+ years in corporate functions. Last 5+ years in Strategic Finance &amp; FP&amp;A.</li>
+                <li><strong>Foundations</strong> — Early career in HR (Recruitment &amp; People Analytics).</li>
+                <li><strong>Versatility</strong> — Deep experience across 4 distinct industries (SaaS, Consulting, Healthcare, IT).</li>
+                <li><strong>Stakeholders</strong> — Trusted partner to the CFO. External: Board members, banks, funding companies, Series B investors.</li>
+                <li><strong>Multi-cultural Teams</strong> — Collaborated with teams across the US, India, Europe, UK, UAE, the Philippines, and Argentina.</li>
+              </ul>
+              <div class="cb-stats" style="margin-top:1.2rem">
+                <div><span class="cb-stat-n">10+</span><span class="cb-stat-l">Years</span></div>
+                <div><span class="cb-stat-n">4</span><span class="cb-stat-l">Industries</span></div>
+                <div><span class="cb-stat-n">3</span><span class="cb-stat-l">Continents</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 02 AI Assisted Process Improvement -->
+    <div class="c-card" data-i="1">
+      <div class="card-inner">
+        <div class="card-head">
+          <span class="card-num">02</span>
+          <h2 class="card-title">AI Assisted<br/>Process Improvement</h2>
+        </div>
+        <div class="card-body">
+          <div class="cb-cols">
+            <div>
+              <p class="cb-p">I'm currently discovering how AI tools can help make the startup and small company world easier. So far, I've leveraged <strong>Gemini, ChatGPT, and Claude</strong> to architect complex Excel logic, cutting manual formula-building time significantly.</p>
+              <p class="cb-p">Developed custom prompts and workflows in Claude to <strong>automate cost-review reporting and NetSuite data cleaning</strong>, making space for value-adding analysis.</p>
+              <p class="cb-p">Used Claude to map and reconcile messy customer data between ERP (NetSuite) systems and Excel. And used <strong>Claude Code to build this very portfolio site</strong> — with no website development knowledge.</p>
+              <div class="cb-tags" style="margin-top:.5rem">
+                <span class="cb-tag">Claude</span>
+                <span class="cb-tag">ChatGPT</span>
+                <span class="cb-tag">Gemini</span>
+                <span class="cb-tag">NetSuite</span>
+                <span class="cb-tag">Excel</span>
+              </div>
+            </div>
+            <div>
+              <p class="cb-label">Key Outcomes</p>
+              <ul class="cb-kv">
+                <li><span>FP&amp;A value-adding time</span><span class="cb-kv-v">↑ More</span></li>
+                <li><span>Reporting &amp; data cleaning</span><span class="cb-kv-v">↓ Less</span></li>
+                <li><span>P&amp;L cost review</span><span class="cb-kv-v">Real-time</span></li>
+                <li><span>Pivot tables replaced</span><span class="cb-kv-v">Dynamic formulas</span></li>
+                <li><span>Portfolio built with</span><span class="cb-kv-v">Claude Code</span></li>
+              </ul>
+              <a href="https://github.com/YOUR-REPO-LINK-HERE" target="_blank" rel="noopener" class="cb-cta" style="margin-top:.8rem">View Sample Files ↗</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 03 Leadership & Management -->
+    <div class="c-card" data-i="2">
+      <div class="card-inner">
+        <div class="card-head">
+          <span class="card-num">03</span>
+          <h2 class="card-title">Leadership &amp;<br/>Management</h2>
+        </div>
+        <div class="card-body">
+          <div class="cb-cols">
+            <div>
+              <p class="cb-p"><strong>Closing the Gap:</strong> Optimised monthly close coordination, reducing P&amp;L availability lag by 10 days within the first few months of implementation.</p>
+              <p class="cb-p"><strong>Team Alignment &amp; Efficiency:</strong> Created a centralised, automated Finance Operations Calendar to ensure 100% compliance with global reporting deadlines. Proposed proactive "housekeeping" tasks to surface cost efficiency opportunities — e.g. quarterly reviews of expiring subscriptions and vendor contracts with automatic renewal reminders.</p>
+              <p class="cb-p"><strong>Onboarding Excellence:</strong> Served as a Team Ambassador at Accenture; created the "Onboarding Blueprint" — job aids and training docs — that cut new-hire ramp-up time significantly.</p>
+              <p class="cb-p"><strong>Mentorship:</strong> Actively mentored junior analysts on technical Excel skills and "Big Picture" financial thinking.</p>
+            </div>
+            <div>
+              <p class="cb-label">Skills &amp; Experience</p>
+              <ul class="cb-list">
+                <li>Team work planning</li>
+                <li>Onboarding &amp; process documentation</li>
+                <li>Junior analyst mentoring</li>
+                <li>People development support</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 04 Process Improvement & Strategic Modelling -->
+    <div class="c-card" data-i="3">
+      <div class="card-inner">
+        <div class="card-head">
+          <span class="card-num">04</span>
+          <h2 class="card-title">Process Improvement &amp;<br/>Strategic Modelling</h2>
+        </div>
+        <div class="card-body">
+          <div class="cb-cols">
+            <div>
+              <p class="cb-p"><strong>SaaS Metrics Transformation:</strong> Converted 2 static business-unit reports into 10 dynamic product P&amp;Ls with full SaaS metrics — MRR, ARR, Churn, GRR, NRR, CAC — enabling consolidated and product cohort analysis.</p>
+              <p class="cb-p"><strong>Audit-Ready Reconciliations:</strong> Built a Trial Balance vs. General Ledger framework that eliminated manual discrepancies and streamlined year-end audit support for the Finance and Accounting team.</p>
+              <p class="cb-p"><strong>Global Payroll Transformation:</strong> Inherited a fragmented payroll process across US, UK, UAE, and India that took 8 days to close. Re-engineered the workflow in NetSuite/Excel to deliver clean, reconciled data by Day 2.</p>
+              <p class="cb-p"><strong>Reporting 2.0:</strong> Integrated separate reporting deliverables into a single source of truth — enhanced with Pivot Charts, Tables, slicers, and timelines for dynamic, self-serve navigation.</p>
+              <div class="cb-tags" style="margin-top:.5rem">
+                <span class="cb-tag">SaaS Metrics</span>
+                <span class="cb-tag">NetSuite</span>
+                <span class="cb-tag">Excel</span>
+                <span class="cb-tag">Power Query</span>
+                <span class="cb-tag">Dynamic Arrays</span>
+                <span class="cb-tag">Pivot Charts</span>
+              </div>
+              <a href="https://github.com/YOUR-REPO-LINK-HERE" target="_blank" rel="noopener" class="cb-cta" style="margin-top:.8rem">View Sample Files ↗</a>
+            </div>
+            <div>
+              <p class="cb-label">Key Projects</p>
+              <ul class="cb-kv">
+                <li><span>SaaS P&amp;Ls built</span><span class="cb-kv-v">10 products</span></li>
+                <li><span>Payroll close cycle</span><span class="cb-kv-v">8 days → Day 2</span></li>
+                <li><span>GL discrepancies</span><span class="cb-kv-v">Eliminated</span></li>
+                <li><span>P&amp;L review time</span><span class="cb-kv-v">Hours → Minutes</span></li>
+                <li><span>Reporting source</span><span class="cb-kv-v">One truth</span></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 05 Business Partnering -->
+    <div class="c-card" data-i="4">
+      <div class="card-inner">
+        <div class="card-head">
+          <span class="card-num">05</span>
+          <h2 class="card-title">Business<br/>Partnering</h2>
+        </div>
+        <div class="card-body">
+          <div class="cb-cols">
+            <div>
+              <p class="cb-p"><strong>From Silos to Regions:</strong> Led a massive cultural shift for an Argentine healthcare leader — moving decision-making from 2 cities to 16 accountable regions. Built the models that gave regional managers true P&amp;L ownership, and trained them in financial planning, budgeting, and cross-functional thinking.</p>
+              <p class="cb-p"><strong>GTM Empowerment:</strong> Proactively built "Finance for Non-Finance" guides for Go-To-Market teams, transforming them from data providers into strategic partners who understand their own ROI.</p>
+              <p class="cb-p"><strong>HR Roots:</strong> Documented all organisational chart job descriptions, collaborated across every company function for recruiting and HR services. Implemented the company's HR system from scratch — trained users, created job aids, maintained updates, and integrated company workflows into the tool.</p>
+            </div>
+            <div>
+              <p class="cb-label">Teams Partnered</p>
+              <ul class="cb-list">
+                <li>Go-To-Market &amp; Sales</li>
+                <li>Regional Operations</li>
+                <li>People &amp; HR</li>
+                <li>Executive &amp; Board</li>
+                <li>Finance &amp; Accounting</li>
+                <li>External: Banks &amp; Investors</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /#carousel -->
+</div><!-- /#stage -->
+
+<!-- CONTACT SECTION -->
+<div id="contactSect">
+  <div class="ct-inner">
+    <div class="ct-grid">
+      <div>
+        <p class="ct-eyebrow">Let's talk</p>
+        <h2 class="ct-title">Let's build<br/>something<br/><em>better.</em></h2>
+      </div>
+      <div>
+        <p class="ct-note">I thrive in companies where finance is a strategic engine, not just a support function — organisations building something meaningful and serious about using AI and automation to do it better.</p>
+        <div class="ct-links">
+          <a href="https://www.linkedin.com/in/silvanabernhardt/" target="_blank" rel="noopener" class="ct-link">Connect on LinkedIn ↗</a>
+          <a href="mailto:sbsilvanabernhardt@gmail.com" class="ct-link">sbsilvanabernhardt@gmail.com</a>
+        </div>
+        <p class="ct-foot">© 2026 Silvana Bernhardt — Finance · Strategy · AI</p>
+      </div>
+    </div>
+  </div>
+  <div class="ct-back" id="ctBack">
+    <div class="ct-back-line"></div>
+    <span>Back</span>
+  </div>
+</div>
+
+<!-- DOT NAV -->
+<div id="dotNav">
+  <div class="d-dot" data-idx="0" title="About Me"></div>
+  <div class="d-dot" data-idx="1" title="AI Process Improvement"></div>
+  <div class="d-dot" data-idx="2" title="Leadership & Management"></div>
+  <div class="d-dot" data-idx="3" title="Process Improvement"></div>
+  <div class="d-dot" data-idx="4" title="Business Partnering"></div>
+</div>
+
+<!-- COUNTER -->
+<div id="counter"><span id="cCurrent">01</span> &thinsp;/&thinsp; 05</div>
+
+<!-- ARROWS -->
+<button class="arrow" id="arrowPrev" aria-label="Previous">
+  <svg viewBox="0 0 17 17" fill="none" stroke="currentColor" stroke-width="1.8">
+    <polyline points="11 3 5 8.5 11 14"/>
+  </svg>
+</button>
+<button class="arrow" id="arrowNext" aria-label="Next">
+  <svg viewBox="0 0 17 17" fill="none" stroke="currentColor" stroke-width="1.8">
+    <polyline points="6 3 12 8.5 6 14"/>
+  </svg>
+</button>
+
+<script>
+  /* ── CURSOR ────────────────────────────── */
+  const curDot  = document.getElementById('cursorDot');
+  const curRing = document.getElementById('cursorRing');
+  let mx=-200, my=-200, rx=-200, ry=-200;
+  document.addEventListener('mousemove', e => {
+    mx = e.clientX; my = e.clientY;
+    curDot.style.transform = `translate(${mx-4}px,${my-4}px)`;
+  });
+  (function animRing() {
+    rx += (mx-rx)*.1; ry += (my-ry)*.1;
+    curRing.style.transform = `translate(${rx-20}px,${ry-20}px)`;
+    requestAnimationFrame(animRing);
+  })();
+  document.querySelectorAll('a,button,.d-dot').forEach(el => {
+    el.addEventListener('mouseenter', () => curRing.classList.add('hover'));
+    el.addEventListener('mouseleave', () => curRing.classList.remove('hover'));
+  });
+
+  /* ── CONSTANTS ─────────────────────────── */
+  const TOTAL = 5;
+  const TITLES = [
+    'About Me',
+    'AI Assisted Process Improvement',
+    'Leadership & Management',
+    'Process Improvement & Strategic Modelling',
+    'Business Partnering'
+  ];
+
+  /* ── ELEMENTS ──────────────────────────── */
+  const heroEl     = document.getElementById('hero');
+  const stageEl    = document.getElementById('stage');
+  const contactEl  = document.getElementById('contactSect');
+  const navLogo    = document.getElementById('navLogo');
+  const navLinks   = document.querySelectorAll('.nav-link');
+  const dotNavEl   = document.getElementById('dotNav');
+  const counterEl  = document.getElementById('counter');
+  const cCurrent   = document.getElementById('cCurrent');
+  const arrowPrev  = document.getElementById('arrowPrev');
+  const arrowNext  = document.getElementById('arrowNext');
+  const progressEl = document.getElementById('progress');
+  const sectionLbl = document.getElementById('sectionLbl');
+  const cards      = Array.from(document.querySelectorAll('.c-card'));
+  const dots       = Array.from(document.querySelectorAll('.d-dot'));
+
+  /* ── STATE ─────────────────────────────── */
+  let activeIdx = -1; // -1 = hero
+  let busy = false;
+
+  /* ── INTRO ─────────────────────────────── */
+  requestAnimationFrame(() => heroEl.classList.add('in'));
+
+  /* ── RENDER ────────────────────────────── */
+  function render() {
+    // update card 3D offsets
+    cards.forEach((c, i) => {
+      c.dataset.off = String(Math.max(-5, Math.min(5, i - activeIdx)));
+    });
+
+    // dots
+    dots.forEach((d, i) => d.classList.toggle('active', i === activeIdx));
+
+    // progress bar
+    progressEl.style.width = activeIdx >= 0
+      ? ((activeIdx + 1) / TOTAL * 100) + '%'
+      : '0%';
+
+    // counter flip animation
+    if (activeIdx >= 0 && activeIdx < TOTAL) {
+      cCurrent.style.transform = 'translateY(-110%)';
+      cCurrent.style.opacity = '0';
+      setTimeout(() => {
+        cCurrent.textContent = String(activeIdx + 1).padStart(2, '0');
+        cCurrent.style.transition = 'none';
+        cCurrent.style.transform = 'translateY(60%)';
+        cCurrent.style.opacity = '0';
+        requestAnimationFrame(() => {
+          cCurrent.style.transition = 'transform .42s cubic-bezier(.16,1,.3,1), opacity .28s';
+          cCurrent.style.transform = 'translateY(0)';
+          cCurrent.style.opacity = '1';
+        });
+      }, 140);
+    }
+
+    // section label
+    if (activeIdx >= 0 && activeIdx < TOTAL) {
+      sectionLbl.textContent = TITLES[activeIdx];
+      sectionLbl.classList.add('vis');
+    } else {
+      sectionLbl.classList.remove('vis');
+    }
+
+    // arrow states — hide both when at contact
+    const atContact = activeIdx === TOTAL;
+    arrowPrev.classList.toggle('dim', activeIdx <= 0 || atContact);
+    arrowNext.classList.toggle('dim', activeIdx >= TOTAL - 1);
+  }
+
+  /* ── ENTER CAROUSEL ────────────────────── */
+  function enterCarousel() {
+    heroEl.classList.add('out');
+    contactEl.classList.remove('vis');
+    setTimeout(() => {
+      stageEl.classList.add('vis');
+      dotNavEl.classList.add('vis');
+      counterEl.classList.add('vis');
+      arrowPrev.classList.add('vis');
+      arrowNext.classList.add('vis');
+      navLogo.classList.add('vis');
+      navLinks.forEach(l => l.classList.add('vis'));
+    }, 280);
+  }
+
+  /* ── LEAVE CAROUSEL ────────────────────── */
+  function leaveCarousel() {
+    stageEl.classList.remove('vis');
+    dotNavEl.classList.remove('vis');
+    counterEl.classList.remove('vis');
+    arrowPrev.classList.remove('vis');
+    arrowNext.classList.remove('vis');
+    navLogo.classList.remove('vis');
+    navLinks.forEach(l => l.classList.remove('vis'));
+    sectionLbl.classList.remove('vis');
+    progressEl.style.width = '0%';
+    cards.forEach(c => { c.dataset.off = '5'; });
+    setTimeout(() => heroEl.classList.remove('out'), 60);
+  }
+
+  /* ── SHOW CONTACT ───────────────────────── */
+  function showContact() {
+    stageEl.classList.remove('vis');
+    dotNavEl.classList.remove('vis');
+    counterEl.classList.remove('vis');
+    arrowPrev.classList.remove('vis');
+    arrowNext.classList.remove('vis');
+    sectionLbl.classList.remove('vis');
+    progressEl.style.width = '100%';
+    cards.forEach(c => { c.dataset.off = '5'; });
+    setTimeout(() => contactEl.classList.add('vis'), 200);
+  }
+
+  /* ── HIDE CONTACT ───────────────────────── */
+  function hideContact() {
+    contactEl.classList.remove('vis');
+    setTimeout(() => {
+      activeIdx = TOTAL - 1;
+      stageEl.classList.add('vis');
+      dotNavEl.classList.add('vis');
+      counterEl.classList.add('vis');
+      arrowPrev.classList.add('vis');
+      arrowNext.classList.add('vis');
+      render();
+    }, 320);
+  }
+
+  /* ── GO TO INDEX ───────────────────────── */
+  function goTo(idx) {
+    if (busy) return;
+    busy = true;
+    const wasHero    = activeIdx === -1;
+    const wasContact = activeIdx === TOTAL;
+    activeIdx = Math.max(0, Math.min(TOTAL, idx));
+
+    if (activeIdx === TOTAL) {
+      if (wasHero) enterCarousel();
+      setTimeout(showContact, wasHero ? 300 : 0);
+    } else {
+      if (wasHero)    enterCarousel();
+      if (wasContact) hideContact();
+      else            render();
+    }
+    setTimeout(() => { busy = false; }, 500);
+  }
+
+  /* ── GO TO HERO ────────────────────────── */
+  function goHero() {
+    if (busy || activeIdx === -1) return;
+    busy = true;
+    activeIdx = -1;
+    contactEl.classList.remove('vis');
+    leaveCarousel();
+    setTimeout(() => { busy = false; }, 500);
+  }
+
+  /* ── WHEEL ─────────────────────────────── */
+  let lastWheel = 0;
+  window.addEventListener('wheel', e => {
+    e.preventDefault();
+    const now = Date.now();
+    if (now - lastWheel < 680) return;
+    lastWheel = now;
+    if (e.deltaY > 20) {
+      if (activeIdx === -1)          goTo(0);
+      else if (activeIdx < TOTAL)    goTo(activeIdx + 1);
+    } else if (e.deltaY < -20) {
+      if (activeIdx === TOTAL)       goTo(TOTAL - 1);
+      else if (activeIdx === 0)      goHero();
+      else if (activeIdx > 0)        goTo(activeIdx - 1);
+    }
+  }, { passive: false });
+
+  /* ── KEYBOARD ──────────────────────────── */
+  window.addEventListener('keydown', e => {
+    if (['ArrowDown','ArrowRight'].includes(e.key)) {
+      if (activeIdx === -1)          goTo(0);
+      else if (activeIdx < TOTAL)    goTo(activeIdx + 1);
+    } else if (['ArrowUp','ArrowLeft'].includes(e.key)) {
+      if (activeIdx === TOTAL)       goTo(TOTAL - 1);
+      else if (activeIdx === 0)      goHero();
+      else if (activeIdx > 0)        goTo(activeIdx - 1);
+    }
+  });
+
+  /* ── SEE MY WORK BUTTON ────────────────── */
+  document.getElementById('heroSeeWork').addEventListener('click', () => goTo(0));
+
+  /* ── CONTACT BACK BUTTON ────────────────── */
+  document.getElementById('ctBack').addEventListener('click', () => goTo(TOTAL - 1));
+
+  /* ── DOTS ──────────────────────────────── */
+  dots.forEach(d => d.addEventListener('click', () => goTo(+d.dataset.idx)));
+
+  /* ── ARROWS ────────────────────────────── */
+  arrowPrev.addEventListener('click', () => {
+    if (activeIdx === 0) goHero();
+    else if (activeIdx > 0) goTo(activeIdx - 1);
+  });
+  arrowNext.addEventListener('click', () => {
+    if (activeIdx < TOTAL) goTo(activeIdx + 1);
+  });
+
+  /* ── CLICK INACTIVE CARDS TO NAVIGATE ─── */
+  cards.forEach((c, i) => {
+    c.addEventListener('click', () => {
+      if (i !== activeIdx && activeIdx !== -1) goTo(i);
+    });
+  });
+
+  /* ── TOUCH ─────────────────────────────── */
+  let ty0 = 0;
+  window.addEventListener('touchstart', e => { ty0 = e.touches[0].clientY; }, { passive: true });
+  window.addEventListener('touchend', e => {
+    const dy = ty0 - e.changedTouches[0].clientY;
+    if (Math.abs(dy) < 45) return;
+    if (dy > 0) {
+      if (activeIdx === -1)           goTo(0);
+      else if (activeIdx < TOTAL - 1) goTo(activeIdx + 1);
+    } else {
+      if (activeIdx === 0)    goHero();
+      else if (activeIdx > 0) goTo(activeIdx - 1);
+    }
+  }, { passive: true });
+
+  /* ── INIT ──────────────────────────────── */
+  cards.forEach(c => { c.dataset.off = '5'; });
+</script>
+</body>
+</html>

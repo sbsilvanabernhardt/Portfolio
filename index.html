@@ -346,6 +346,7 @@
     .c-card[data-off="0"] {
       transform: translateX(0)    rotateY(0deg)  translateZ(260px) scale(1);
       opacity: 1;   box-shadow: 0 60px 180px rgba(0,0,0,.65), 0 0 0 1px rgba(255,255,255,.06);
+      will-change: auto;
     }
     .c-card[data-off="1"] {
       transform: translateX(40%)  rotateY(-30deg) translateZ(30px) scale(.85);
@@ -411,7 +412,7 @@
       color: rgba(0,0,0,.6); margin-bottom: .5rem;
     }
     .cb-p:last-child { margin-bottom: 0; }
-    .cb-p strong { color: var(--black); font-weight: 600; }
+    .cb-p strong { color: var(--black); font-weight: 600; -webkit-font-smoothing: subpixel-antialiased; }
 
     .cb-cols {
       display: grid; grid-template-columns: 1fr 1fr; gap: .5rem 0;

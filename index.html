@@ -92,12 +92,14 @@
       text-transform: uppercase; color: rgba(255,255,255,.65); text-decoration: none;
       opacity: 0; transform: translateY(-6px);
       transition: opacity .5s var(--ease) var(--nd, 0ms),
-                  transform .5s var(--ease) var(--nd, 0ms);
+                  transform .5s var(--ease) var(--nd, 0ms),
+                  color .2s;
     }
     .nav-link:nth-child(1) { --nd: 50ms; }
     .nav-link:nth-child(2) { --nd: 100ms; }
     .nav-link:nth-child(3) { --nd: 150ms; }
     .nav-link.vis { opacity: 1; transform: translateY(0); }
+    .nav-link.vis:hover { transform: translateY(-3px); color: rgba(255,255,255,1); }
 
     /* ── HERO ────────────────────────────────── */
     #hero {
@@ -186,8 +188,9 @@
       font-size: .68rem; font-weight: 700; letter-spacing: .14em;
       text-transform: uppercase; text-decoration: none;
       border-radius: 100px; padding: .62rem 1.35rem;
-      transition: background .2s, color .2s, border-color .2s;
+      transition: background .2s, color .2s, border-color .2s, transform .2s;
     }
+    .h-btn:hover { transform: translateY(-3px); }
     .h-btn-ghost {
       color: var(--black);
       background: var(--white);
@@ -1007,6 +1010,25 @@
     el.addEventListener('mouseenter', () => curRing.classList.add('hover'));
     el.addEventListener('mouseleave', () => curRing.classList.remove('hover'));
   });
+
+  /* ── CLICK SOUND ───────────────────────── */
+  let audioCtx;
+  function playClick() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const t = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(1000, t);
+    gain.gain.setValueAtTime(0.1, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.04);
+    osc.start(t);
+    osc.stop(t + 0.04);
+  }
+  document.getElementById('heroSeeWork').addEventListener('click', playClick);
+  document.querySelectorAll('.nav-link').forEach(el => el.addEventListener('click', playClick));
 
   /* ── CONSTANTS ─────────────────────────── */
   const TOTAL = 5;

@@ -393,15 +393,15 @@
     <div>
       <p class="eyebrow">CloudCo · June 2026 · Interactive</p>
       <h1>The SaaS Three-Statement Map</h1>
-      <p class="sub">Hover or click any line to trace what it's a <b>good guy</b> to and a <b>bad guy</b> to, across the other two statements.</p>
+      <p class="sub">Hover or click any line to trace what it <b>builds</b> and what it <b>reduces</b>, across the other two statements.</p>
     </div>
     <div class="legend">
       <span><i class="dot" style="background:var(--pl-accent)"></i>P&amp;L</span>
       <span><i class="dot" style="background:var(--bs-accent)"></i>Balance Sheet</span>
       <span><i class="dot" style="background:var(--cf-accent)"></i>Cash Flow</span>
       <div class="legend-divider"></div>
-      <span class="gb-key"><span class="gb-swatch good">+</span>strengthens</span>
-      <span class="gb-key"><span class="gb-swatch bad">−</span>draws down</span>
+      <span class="gb-key"><span class="gb-swatch good">+</span>builds</span>
+      <span class="gb-key"><span class="gb-swatch bad">−</span>reduces</span>
     </div>
   </div>
 
@@ -1006,7 +1006,7 @@ function showDetail(id, isPinned){
 
   const calloutsHtml = (data.targets||[]).map(t=>{
     const tline = lines.find(l=>l.id===t.id);
-    const badgeText = t.role === 'good' ? 'GOOD GUY TO' : 'BAD GUY TO';
+    const badgeText = t.role === 'good' ? 'BUILDS' : 'REDUCES';
     const condHtml = t.cond ? `<span class="cond-tag">${t.cond}</span>` : '';
     return `<div class="callout ${t.role}">
       <span class="callout-badge">${badgeText}</span>

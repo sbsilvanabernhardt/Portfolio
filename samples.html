@@ -112,6 +112,37 @@
       color: rgba(255,255,255,1);
     }
 
+    /* ── TAB BAR ─────────────────────────────── */
+    .tab-bar {
+      position: relative; z-index: 1;
+      display: flex; gap: .45rem; flex-wrap: wrap;
+      padding: 0 clamp(1.5rem, 4vw, 4rem);
+      margin-bottom: 3rem;
+    }
+    .tab-btn {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: .63rem; font-weight: 700; letter-spacing: .12em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,.4);
+      text-decoration: none;
+      padding: .55rem 1.2rem;
+      border-radius: 100px;
+      border: 1px solid rgba(255,255,255,.1);
+      background: transparent;
+      transition: color .2s, background .2s, border-color .2s;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+    .tab-btn:hover {
+      color: rgba(255,255,255,.75);
+      border-color: rgba(255,255,255,.22);
+    }
+    .tab-btn.active {
+      color: rgba(255,255,255,1);
+      background: rgba(255,255,255,.1);
+      border-color: rgba(255,255,255,.28);
+    }
+
     /* ── SCROLL ANIMATIONS ───────────────────── */
     .page-hero {
       opacity: 0; transform: translateY(22px);
@@ -408,6 +439,13 @@
   <div class="page-hero">
     <h1 class="page-title">Work<br/>Samples</h1>
     <p class="page-sub">Models, tools, and analyses built to drive decisions — not just reports. Each piece is designed to be handed off, scaled, and used by stakeholders across the business.</p>
+  </div>
+
+  <!-- TAB BAR -->
+  <div class="tab-bar">
+    <a href="#process-improvement" class="tab-btn">Process Improvement</a>
+    <a href="#business-partnering" class="tab-btn">Cross Functional Business Partnering</a>
+    <a href="#saas-fpa" class="tab-btn">SaaS FP&amp;A &amp; Strategic Finance</a>
   </div>
 
   <!-- ── 01 PROCESS IMPROVEMENT ───────────────────── -->
@@ -910,40 +948,81 @@
 </footer>
 
 <script>
-  // ── SCROLL ANIMATIONS ─────────────────────
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        entry.target.classList.add('reveal');
-        observer.unobserve(entry.target);
+  const TABS = ['process-improvement', 'business-partnering', 'saas-fpa'];
+
+  function activateTab(id) {
+    if (!TABS.includes(id)) id = TABS[0];
+
+    TABS.forEach(t => {
+      const section = document.getElementById(t);
+      const btn = document.querySelector(`.tab-btn[href="#${t}"]`);
+      if (section) section.style.display = t === id ? '' : 'none';
+      if (btn) btn.classList.toggle('active', t === id);
+    });
+
+    // Reset & re-trigger scroll animations for the visible section
+    const active = document.getElementById(id);
+    if (!active) return;
+
+    active.querySelectorAll('.s-card').forEach(card => {
+      card.classList.remove('reveal');
+      card.querySelectorAll('.s-item').forEach(item => item.classList.remove('reveal'));
+    });
+
+    requestAnimationFrame(() => {
+      active.querySelectorAll('.s-card').forEach((card, i) => {
+        setTimeout(() => {
+          card.classList.add('reveal');
+          card.querySelectorAll('.s-preview').forEach(p => animateBars(p));
+        }, i * 80);
+      });
+    });
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function animateBars(preview) {
+    preview.querySelectorAll('.sp-fill').forEach(bar => {
+      const target = bar.style.getPropertyValue('--w') || '0%';
+      bar.style.setProperty('--w', '0%');
+      requestAnimationFrame(() => {
+        setTimeout(() => bar.style.setProperty('--w', target),
+          parseInt(bar.style.getPropertyValue('--d')) || 0);
+      });
+    });
+  }
+
+  // Tab clicks
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.preventDefault();
+      const id = btn.getAttribute('href').replace('#', '');
+      history.pushState(null, '', '#' + id);
+      activateTab(id);
+    });
+  });
+
+  // Dropdown links on this page also switch tabs
+  document.querySelectorAll('.nav-dd-item').forEach(link => {
+    link.addEventListener('click', e => {
+      const hash = link.getAttribute('href');
+      if (hash && hash.startsWith('#')) {
+        e.preventDefault();
+        const id = hash.replace('#', '');
+        history.pushState(null, '', hash);
+        activateTab(id);
       }
     });
-  }, { threshold: 0.08 });
+  });
 
-  // Reveal page hero immediately
+  // Browser back/forward
+  window.addEventListener('popstate', () => {
+    activateTab((window.location.hash || '#' + TABS[0]).replace('#', ''));
+  });
+
+  // Initial load
   setTimeout(() => document.querySelector('.page-hero').classList.add('reveal'), 80);
-
-  // Observe each card
-  document.querySelectorAll('.s-card').forEach(card => observer.observe(card));
-
-  // Animate bar fills when card reveals
-  const barObserver = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        entry.target.querySelectorAll('.sp-fill').forEach(bar => {
-          const target = bar.style.getPropertyValue('--w') || '0%';
-          bar.style.setProperty('--w', '0%');
-          requestAnimationFrame(() => {
-            setTimeout(() => bar.style.setProperty('--w', target),
-              parseInt(bar.style.getPropertyValue('--d')) || 0);
-          });
-        });
-        barObserver.unobserve(entry.target);
-      }
-    });
-  }, { threshold: 0.1 });
-
-  document.querySelectorAll('.s-preview').forEach(p => barObserver.observe(p));
+  activateTab((window.location.hash || '#' + TABS[0]).replace('#', ''));
 </script>
 
 </body>

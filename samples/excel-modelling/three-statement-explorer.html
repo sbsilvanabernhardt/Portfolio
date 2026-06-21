@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>SaaS Three-Statement Linkage Explorer</title>
+<style>
+  :root{
+    --bg: #FFFFFF;
+    --paper: #FFFFFF;
+    --canvas: #FBFBFE;
+    --line: #ECECF3;
+    --line-soft: #F4F4FA;
+    --ink: #14121F;
+    --ink-dim: #6E6B82;
+    --ink-faint: #ACA9BD;
+
+    --blue: #3D5AFE;
+    --violet: #7C3AED;
+    --grad: linear-gradient(90deg, #3D5AFE 0%, #7C3AED 100%);
+
+    --pl-accent: #3D5AFE;
+    --bs-accent: #7C3AED;
+    --cf-accent: #C026D3;
+    --pl-tint: #EEF1FF;
+    --bs-tint: #F4EEFF;
+    --cf-tint: #FBEEFB;
+
+    --good: #0E9F6E;
+    --good-bg: #E9FAF3;
+    --good-border: #BCEDDA;
+    --bad: #E33D6F;
+    --bad-bg: #FEEEF3;
+    --bad-border: #F8C9D8;
+
+    --sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --mono: 'JetBrains Mono', 'SF Mono', 'Roboto Mono', Consolas, monospace;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:var(--sans);
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{
+    max-width:1360px;
+    margin:0 auto;
+    padding:40px 26px 56px;
+  }
+
+  /* ---------- MASTHEAD ---------- */
+  .masthead{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    margin-bottom:30px;
+    flex-wrap:wrap;
+    gap:16px;
+    padding-bottom:26px;
+    border-bottom:1px solid var(--line);
+  }
+  .eyebrow{
+    font-family:var(--mono);
+    font-size:10.5px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--violet);
+    font-weight:600;
+    margin:0 0 10px;
+  }
+  h1{
+    font-size:32px;
+    font-weight:800;
+    margin:0;
+    letter-spacing:-0.025em;
+    background:var(--grad);
+    -webkit-background-clip:text;
+    background-clip:text;
+    -webkit-text-fill-color:transparent;
+    display:inline-block;
+  }
+  .sub{
+    color:var(--ink-dim);
+    font-size:14px;
+    margin:10px 0 0;
+    max-width:580px;
+    line-height:1.6;
+  }
+  .sub b{color:var(--ink); font-weight:650;}
+  .legend{
+    display:flex;
+    gap:18px;
+    font-family:var(--mono);
+    font-size:10.5px;
+    color:var(--ink-dim);
+    letter-spacing:0.02em;
+    align-items:center;
+  }
+  .legend span{display:flex;align-items:center;gap:7px;}
+  .dot{width:8px;height:8px;border-radius:50%;display:inline-block;}
+  .legend-divider{width:1px;height:14px;background:var(--line);align-self:center;}
+  .gb-key{display:flex;align-items:center;gap:6px;}
+  .gb-swatch{
+    width:15px;height:15px;border-radius:5px;
+    display:inline-flex;align-items:center;justify-content:center;
+    font-size:10px;font-weight:800;
+  }
+  .gb-swatch.good{background:var(--good-bg); color:var(--good);}
+  .gb-swatch.bad{background:var(--bad-bg); color:var(--bad);}
+
+  /* ---------- BOARD ---------- */
+  .board{
+    position:relative;
+  }
+  .statements{
+    display:grid;
+    grid-template-columns:1fr 1fr 1fr;
+    gap:16px;
+    position:relative;
+    z-index:2;
+  }
+  svg.linklayer{
+    position:absolute;
+    top:0; left:0;
+    width:100%; height:100%;
+    pointer-events:none;
+    z-index:5;
+    overflow:visible;
+  }
+  .linkpath{
+    fill:none;
+    stroke-width:2;
+    opacity:0;
+    transition:opacity 0.25s ease;
+  }
+  .linkpath.show{opacity:0.7;}
+  .linkpath.good{stroke:var(--good);}
+  .linkpath.bad{stroke:var(--bad);}
+
+  .statement{
+    background:var(--paper);
+    display:flex;
+    flex-direction:column;
+    border:1px solid var(--line);
+    border-radius:18px;
+    overflow:hidden;
+    box-shadow:0 1px 2px rgba(20,18,31,0.03);
+  }
+  .statement-head{
+    padding:18px 20px 16px;
+    border-bottom:1px solid var(--line);
+    background:var(--canvas);
+  }
+  .statement-head .tag{
+    font-family:var(--mono);
+    font-size:9.5px;
+    letter-spacing:0.12em;
+    text-transform:uppercase;
+    font-weight:700;
+  }
+  .pl .statement-head .tag{color:var(--pl-accent);}
+  .bs .statement-head .tag{color:var(--bs-accent);}
+  .cf .statement-head .tag{color:var(--cf-accent);}
+  .statement-head h2{
+    font-size:17px;
+    margin:6px 0 0;
+    font-weight:750;
+    letter-spacing:-0.01em;
+  }
+  .statement-head .period{
+    font-size:10.5px;
+    color:var(--ink-faint);
+    margin-top:3px;
+    font-family:var(--mono);
+  }
+  .lines{
+    padding:8px 10px 18px;
+    flex:1;
+  }
+  .group-label{
+    font-family:var(--mono);
+    font-size:9.5px;
+    letter-spacing:0.1em;
+    text-transform:uppercase;
+    color:var(--ink-faint);
+    padding:14px 10px 6px;
+    font-weight:600;
+  }
+  .line{
+    position:relative;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+    padding:8px 10px;
+    margin:1px 0;
+    border-radius:9px;
+    cursor:pointer;
+    transition:background 0.15s ease, transform 0.15s ease;
+  }
+  .line .name{
+    font-size:12.8px;
+    color:var(--ink);
+    line-height:1.35;
+    font-weight:500;
+  }
+  .line .val{
+    font-family:var(--mono);
+    font-size:12px;
+    color:var(--ink-dim);
+    white-space:nowrap;
+    font-weight:500;
+  }
+  .line.subtotal{border-top:1px solid var(--line); margin-top:5px; padding-top:11px;}
+  .line.subtotal .name, .line.subtotal .val{font-weight:750;color:var(--ink);}
+  .line.linkable:hover{background:var(--line-soft);}
+  .line.linkable::before{
+    content:'';
+    position:absolute;
+    left:1px; top:9px; bottom:9px;
+    width:3px;
+    border-radius:3px;
+    background:transparent;
+  }
+  .line.active{background:var(--row-tint, var(--line-soft));}
+  .line.active::before{background:var(--row-accent, var(--ink));}
+  .line.dim{opacity:0.28;}
+
+  /* ---------- DETAIL PANEL ---------- */
+  .detail{
+    margin-top:22px;
+    background:var(--canvas);
+    border:1px solid var(--line);
+    border-radius:18px;
+    padding:0;
+    min-height:128px;
+    position:relative;
+    z-index:2;
+  }
+  .detail .placeholder{
+    color:var(--ink-faint);
+    font-size:13.5px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    height:128px;
+    padding:0 28px;
+  }
+  .detail-inner{
+    padding:24px 28px 26px;
+  }
+  .detail-head{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    margin-bottom:16px;
+    flex-wrap:wrap;
+  }
+  .detail-title{
+    font-size:20px;
+    font-weight:800;
+    margin:0;
+    letter-spacing:-0.01em;
+  }
+  .source-chip{
+    font-family:var(--mono);
+    font-size:10px;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    padding:4px 10px;
+    border-radius:20px;
+    font-weight:700;
+  }
+  .source-chip.pl{color:var(--pl-accent); background:var(--pl-tint);}
+  .source-chip.bs{color:var(--bs-accent); background:var(--bs-tint);}
+  .source-chip.cf{color:var(--cf-accent); background:var(--cf-tint);}
+
+  .callouts{
+    display:flex;
+    flex-direction:column;
+    gap:9px;
+    margin-bottom:18px;
+  }
+  .callout{
+    display:flex;
+    align-items:flex-start;
+    gap:12px;
+    padding:11px 15px;
+    border-radius:12px;
+    border:1px solid;
+    background:var(--paper);
+  }
+  .callout.good{border-color:var(--good-border);}
+  .callout.bad{border-color:var(--bad-border);}
+  .callout-badge{
+    font-family:var(--mono);
+    font-size:9.5px;
+    font-weight:800;
+    letter-spacing:0.05em;
+    text-transform:uppercase;
+    padding:4px 9px;
+    border-radius:20px;
+    white-space:nowrap;
+    margin-top:1px;
+  }
+  .callout.good .callout-badge{background:var(--good-bg); color:var(--good);}
+  .callout.bad .callout-badge{background:var(--bad-bg); color:var(--bad);}
+  .callout-text{
+    font-size:13px;
+    line-height:1.55;
+    color:var(--ink);
+  }
+  .callout-text b{font-weight:700;}
+  .callout-text .target{
+    font-family:var(--mono);
+    font-size:11.5px;
+    background:var(--line-soft);
+    padding:1.5px 6px;
+    border-radius:5px;
+    font-weight:600;
+  }
+
+  .detail-body{
+    font-size:13.5px;
+    line-height:1.65;
+    color:var(--ink-dim);
+    max-width:780px;
+  }
+  .detail-body b{color:var(--ink); font-weight:700;}
+  .mech-tag{
+    display:inline-flex;
+    align-items:center;
+    gap:7px;
+    font-family:var(--mono);
+    font-size:10px;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    color:var(--violet);
+    font-weight:700;
+    margin-top:16px;
+    padding-top:14px;
+    border-top:1px solid var(--line);
+  }
+  .mech-tag::before{
+    content:'';
+    width:6px;height:6px;border-radius:50%;
+    background:var(--grad);
+  }
+
+  .hint{
+    text-align:center;
+    color:var(--ink-faint);
+    font-size:11px;
+    margin-top:16px;
+    font-family:var(--mono);
+    letter-spacing:0.03em;
+  }
+  .hint kbd{
+    font-family:var(--mono);
+    background:var(--line-soft);
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:1px 6px;
+    font-size:10px;
+  }
+
+  @media (max-width:880px){
+    .statements{grid-template-columns:1fr;}
+    svg.linklayer{display:none;}
+    .masthead{align-items:flex-start;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="masthead">
+    <div>
+      <p class="eyebrow">CloudCo · June 2026 · Interactive</p>
+      <h1>The SaaS Three-Statement Map</h1>
+      <p class="sub">Hover or click any line to trace what it's a <b>good guy</b> to and a <b>bad guy</b> to, across the other two statements.</p>
+    </div>
+    <div class="legend">
+      <span><i class="dot" style="background:var(--pl-accent)"></i>P&amp;L</span>
+      <span><i class="dot" style="background:var(--bs-accent)"></i>Balance Sheet</span>
+      <span><i class="dot" style="background:var(--cf-accent)"></i>Cash Flow</span>
+      <div class="legend-divider"></div>
+      <span class="gb-key"><span class="gb-swatch good">+</span>strengthens</span>
+      <span class="gb-key"><span class="gb-swatch bad">−</span>draws down</span>
+    </div>
+  </div>
+
+  <div class="board" id="board">
+    <svg class="linklayer" id="linklayer"></svg>
+
+    <div class="statements">
+      <!-- P&L -->
+      <div class="statement pl">
+        <div class="statement-head">
+          <div class="tag">Income Statement</div>
+          <h2>Profit &amp; Loss</h2>
+          <div class="period">Month ended Jun 30, 2026</div>
+        </div>
+        <div class="lines" id="pl-lines"></div>
+      </div>
+
+      <!-- Balance Sheet -->
+      <div class="statement bs">
+        <div class="statement-head">
+          <div class="tag">Statement of Position</div>
+          <h2>Balance Sheet</h2>
+          <div class="period">As of Jun 30, 2026</div>
+        </div>
+        <div class="lines" id="bs-lines"></div>
+      </div>
+
+      <!-- Cash Flow -->
+      <div class="statement cf">
+        <div class="statement-head">
+          <div class="tag">Statement of Cash Flows</div>
+          <h2>Cash Flow</h2>
+          <div class="period">Month ended Jun 30, 2026</div>
+        </div>
+        <div class="lines" id="cf-lines"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="detail" id="detail">
+    <div class="placeholder">Hover or click a line item above to trace its connections.</div>
+  </div>
+  <p class="hint">CLICK A LINE TO PIN IT · <kbd>ESC</kbd> OR CLICK BACKGROUND TO CLEAR</p>
+
+</div>
+
+<script>
+/* ---------------- DATA MODEL ---------------- */
+const lines = [
+  // P&L
+  {id:'pl-rev', st:'pl', name:'Subscription Revenue', val:'$10,000', group:null},
+  {id:'pl-cogs-host', st:'pl', name:'Hosting / Cloud Infra (COGS)', val:'$(1,400)', group:null},
+  {id:'pl-cogs-cs', st:'pl', name:'Customer Success & Support (COGS)', val:'$(600)', group:null},
+  {id:'pl-gp', st:'pl', name:'Gross Profit', val:'$8,000', type:'subtotal'},
+  {id:'pl-comm', st:'pl', name:'Sales Commission Amortization', val:'$(500)', group:null},
+  {id:'pl-mkt', st:'pl', name:'Marketing & Demand Gen', val:'$(3,000)', group:null},
+  {id:'pl-rd', st:'pl', name:'Product & Engineering (R&D)', val:'$(8,000)', group:null},
+  {id:'pl-ga', st:'pl', name:'G&A (Finance, HR, Legal)', val:'$(4,000)', group:null},
+  {id:'pl-sbc', st:'pl', name:'Stock-Based Compensation', val:'$(1,200)', group:null},
+  {id:'pl-da', st:'pl', name:'Depreciation & Amortization', val:'$(1,000)', group:null},
+  {id:'pl-ebit', st:'pl', name:'Operating Income (EBIT)', val:'$(9,700)', type:'subtotal'},
+  {id:'pl-int', st:'pl', name:'Interest Expense', val:'$(150)', group:null},
+  {id:'pl-ni', st:'pl', name:'Net Income (Loss)', val:'$(9,850)', type:'subtotal'},
+
+  // Balance Sheet
+  {id:'bs-cash', st:'bs', name:'Cash', val:'$156,850', group:'Assets'},
+  {id:'bs-ar', st:'bs', name:'Accounts Receivable', val:'$0', group:'Assets'},
+  {id:'bs-defcomm', st:'bs', name:'Deferred Commission Asset', val:'$5,500', group:'Assets'},
+  {id:'bs-prepaid', st:'bs', name:'Prepaid Software & Insurance', val:'$2,400', group:'Assets'},
+  {id:'bs-ppe', st:'bs', name:'PP&E / Capitalized Software', val:'($1,000)', group:'Assets'},
+  {id:'bs-ta', st:'bs', name:'Total Assets', val:'$163,750', type:'subtotal'},
+
+  {id:'bs-ap', st:'bs', name:'Accounts Payable', val:'$1,800', group:'Liabilities'},
+  {id:'bs-accrued', st:'bs', name:'Accrued Payroll & Bonuses', val:'$3,500', group:'Liabilities'},
+  {id:'bs-defrev', st:'bs', name:'Deferred Revenue', val:'$110,000', group:'Liabilities'},
+  {id:'bs-debt', st:'bs', name:'Venture Debt', val:'$18,000', group:'Liabilities'},
+  {id:'bs-tl', st:'bs', name:'Total Liabilities', val:'$133,300', type:'subtotal'},
+
+  {id:'bs-apic', st:'bs', name:'Paid-in Capital (APIC)', val:'$31,200', group:'Equity'},
+  {id:'bs-re', st:'bs', name:'Retained Earnings', val:'($800)', group:'Equity'},
+  {id:'bs-te', st:'bs', name:'Total Equity', val:'$30,450', type:'subtotal'},
+
+  // Cash Flow
+  {id:'cf-ni', st:'cf', name:'Net Income', val:'$(9,850)', group:'Operating'},
+  {id:'cf-da', st:'cf', name:'+ D&A add-back', val:'$1,000', group:'Operating'},
+  {id:'cf-sbc', st:'cf', name:'+ SBC add-back', val:'$1,200', group:'Operating'},
+  {id:'cf-commamort', st:'cf', name:'+ Commission amortization add-back', val:'$500', group:'Operating'},
+  {id:'cf-defrev', st:'cf', name:'+ Increase in Deferred Revenue', val:'$110,000', group:'Operating'},
+  {id:'cf-ap', st:'cf', name:'+ Increase in Accounts Payable', val:'$1,800', group:'Operating'},
+  {id:'cf-accrued', st:'cf', name:'+ Increase in Accrued Payroll', val:'$3,500', group:'Operating'},
+  {id:'cf-defcomm', st:'cf', name:'− Increase in Deferred Commission Asset', val:'$(6,000)', group:'Operating'},
+  {id:'cf-prepaid', st:'cf', name:'− Increase in Prepaid Expenses', val:'$(2,400)', group:'Operating'},
+  {id:'cf-ar', st:'cf', name:'− Increase in Accounts Receivable', val:'$0', group:'Operating'},
+  {id:'cf-cfo', st:'cf', name:'Cash Flow from Operations', val:'$109,750', type:'subtotal'},
+
+  {id:'cf-capex', st:'cf', name:'Capitalized Software / Equipment', val:'$0', group:'Investing'},
+  {id:'cf-cfi', st:'cf', name:'Cash Flow from Investing', val:'$0', type:'subtotal'},
+
+  {id:'cf-debt', st:'cf', name:'Venture Debt Draw', val:'$0', group:'Financing'},
+  {id:'cf-equity', st:'cf', name:'Equity Raised', val:'$0', group:'Financing'},
+  {id:'cf-cff', st:'cf', name:'Cash Flow from Financing', val:'$0', type:'subtotal'},
+
+  {id:'cf-net', st:'cf', name:'Net Change in Cash', val:'$109,750', type:'subtotal'},
+];
+
+const connections = {
+  'pl-rev': {
+    why: "Only <b>$10,000</b> of the $120,000 annual contract is recognized as revenue this month. The other <b>$110,000</b> already sits in cash but hasn't been earned yet, so it stays parked in Deferred Revenue until future months recognize it.",
+    mech: 'Revenue recognition timing',
+    targets: [
+      {id:'bs-defrev', role:'bad', reason:'draws the balance down by $10,000 as it converts to earned revenue'},
+    ]
+  },
+  'pl-cogs-host': {
+    why: "Cloud hosting costs are paid in cash the same month they're incurred — no timing gap, so this flows straight through Net Income with no balance sheet residue.",
+    mech: 'Cash expense — no timing difference',
+    targets: [{id:'cf-ni', role:'bad', reason:'lowers Net Income, the CF statement\'s starting line'}]
+  },
+  'pl-cogs-cs': {
+    why: "Customer success and support salaries are a cash cost paid out as incurred, flowing straight through to Net Income.",
+    mech: 'Cash expense — no timing difference',
+    targets: [{id:'cf-ni', role:'bad', reason:'lowers Net Income, the CF statement\'s starting line'}]
+  },
+  'pl-comm': {
+    why: "Only $500 of the $6,000 commission paid is expensed this month. The unamortized $5,500 still sits as an asset, and since no new cash left the business this month for this expense, it's added back on the Cash Flow statement.",
+    mech: 'Capitalized cost, amortized to expense',
+    targets: [
+      {id:'bs-defcomm', role:'bad', reason:'the asset amortizes down by $500 as it\'s expensed'},
+      {id:'cf-commamort', role:'good', reason:'gets added back since the $500 was non-cash this month'},
+    ]
+  },
+  'pl-mkt': {
+    why: "Demand gen and marketing spend (ads, events, content) is paid in cash as incurred — no capitalization, so it flows straight through Net Income.",
+    mech: 'Cash expense — no timing difference',
+    targets: [{id:'cf-ni', role:'bad', reason:'lowers Net Income, the CF statement\'s starting line'}]
+  },
+  'pl-rd': {
+    why: "Product & Engineering salaries are mostly cash costs (unless specific projects qualify for software capitalization). They flow through Net Income and also accrue partially into payroll liabilities if paid after month-end.",
+    mech: 'Cash expense, partly accrued',
+    targets: [
+      {id:'cf-ni', role:'bad', reason:'lowers Net Income, the CF statement\'s starting line'},
+      {id:'bs-accrued', role:'good', reason:'any unpaid portion at month-end builds this accrual'},
+    ]
+  },
+  'pl-ga': {
+    why: "Finance, HR, and legal costs are largely cash expenses, flowing straight through Net Income to Cash Flow with no adjustment needed.",
+    mech: 'Cash expense — no timing difference',
+    targets: [{id:'cf-ni', role:'bad', reason:'lowers Net Income, the CF statement\'s starting line'}]
+  },
+  'pl-sbc': {
+    why: "Stock-based comp reduces Net Income but never touches cash — it's settled in equity, not dollars. It's added back on the Cash Flow statement and increases Paid-in Capital on the balance sheet.",
+    mech: 'Non-cash expense, add-back',
+    targets: [
+      {id:'bs-apic', role:'good', reason:'the $1,200 expensed here builds up Paid-in Capital instead of using cash'},
+      {id:'cf-sbc', role:'good', reason:'gets added back since it never used any cash'},
+    ]
+  },
+  'pl-da': {
+    why: "D&A reduces the carrying value of PP&E on the balance sheet, but no cash actually left the business — so it's added back on the Cash Flow statement to recover the cash Net Income understated.",
+    mech: 'Non-cash expense, add-back',
+    targets: [
+      {id:'bs-ppe', role:'bad', reason:'shrinks the asset balance by $1,000'},
+      {id:'cf-da', role:'good', reason:'gets added back since it never used any cash'},
+    ]
+  },
+  'pl-ebit': {
+    why: "Operating Income is Gross Profit less all operating costs (S&M, R&D, G&A, SBC, D&A) — the profitability of the core business before financing costs.",
+    mech: 'P&L subtotal',
+    targets: []
+  },
+  'pl-int': {
+    why: "Interest on the venture debt facility is a cash cost (unless explicitly deferred/PIK), reducing Net Income and flowing through to operating cash flow.",
+    mech: 'Cash expense tied to Debt balance',
+    targets: [
+      {id:'bs-debt', role:'good', reason:'this expense only exists because of the outstanding debt balance'},
+      {id:'cf-ni', role:'bad', reason:'lowers Net Income, the CF statement\'s starting line'},
+    ]
+  },
+  'pl-ni': {
+    why: "Net Income is the master bridge line: it builds up Retained Earnings on the balance sheet, and it's the literal starting point of the Cash Flow statement.",
+    mech: 'The core bridge line',
+    targets: [
+      {id:'bs-re', role:'bad', reason:'a $(9,850) loss pulls Retained Earnings down'},
+      {id:'cf-ni', role:'good', reason:'hands off as the opening line the CF statement builds from'},
+    ]
+  },
+
+  'bs-cash': {
+    why: "Ending Cash on the balance sheet is purely a passenger — it must always equal Beginning Cash plus the Net Change in Cash computed on the Cash Flow statement. This is the master tie-out check of any model.",
+    mech: 'Statement tie-out',
+    targets: [{id:'cf-net', role:'good', reason:'directly receives the period\'s $109,750 increase'}]
+  },
+  'bs-ar': {
+    why: "AR represents revenue recognized on the P&L that hasn't been collected yet. It's $0 here since the contract was prepaid in full — but generally, a rising AR balance quietly drains cash even as revenue looks healthy.",
+    mech: 'Recognized but uncollected revenue',
+    targets: [
+      {id:'pl-rev', role:'good', reason:'AR only exists because revenue was already recognized here'},
+      {id:'cf-ar', role:'bad', reason:'any increase in AR would show up as a use of cash'},
+    ]
+  },
+  'bs-defcomm': {
+    why: "This asset holds the $5,500 of commission cost paid in cash but not yet expensed. As it amortizes in future months, it feeds into commission expense on the P&L.",
+    mech: 'Capitalized cost asset',
+    targets: [
+      {id:'pl-comm', role:'bad', reason:'the asset bleeds out $500/month into this expense line'},
+      {id:'cf-defcomm', role:'bad', reason:'building this asset used $6,000 of cash this month'},
+    ]
+  },
+  'bs-prepaid': {
+    why: "Prepaid software licenses and insurance are paid in cash upfront, then expensed gradually over the coverage period — so building this balance uses cash now for expense recognized later.",
+    mech: 'Prepaid cost asset',
+    targets: [{id:'cf-prepaid', role:'bad', reason:'paying for coverage upfront used $2,400 of cash this month'}]
+  },
+  'bs-ppe': {
+    why: "PP&E / Capitalized Software shrinks as D&A is expensed on the P&L, and grows whenever new capex hits the Cash Flow statement's investing section.",
+    mech: 'Long-term asset roll-forward',
+    targets: [
+      {id:'pl-da', role:'bad', reason:'D&A erodes this balance by $1,000 every month'},
+      {id:'cf-capex', role:'good', reason:'new capex would replenish this balance'},
+    ]
+  },
+  'bs-ap': {
+    why: "Accounts Payable is vendor bills incurred but not yet paid in cash — a built-in, interest-free financing source as it grows.",
+    mech: 'Unpaid vendor bills',
+    targets: [{id:'cf-ap', role:'good', reason:'a growing AP balance is a source of cash this month'}]
+  },
+  'bs-accrued': {
+    why: "Accrued payroll and bonuses represent compensation earned by employees but not yet paid out in cash — common for R&D and other headcount-heavy teams paid on a lag.",
+    mech: 'Unpaid compensation',
+    targets: [
+      {id:'pl-rd', role:'good', reason:'unpaid R&D comp at month-end is what builds this accrual'},
+      {id:'cf-accrued', role:'good', reason:'a growing accrual is a source of cash this month'},
+    ]
+  },
+  'bs-defrev': {
+    why: "The single most important SaaS balance sheet line: cash already collected for service not yet delivered. It grows with new billings and shrinks as revenue is recognized — the period change flows through Cash Flow from Operations.",
+    mech: 'Unearned revenue liability',
+    targets: [
+      {id:'pl-rev', role:'bad', reason:'recognizing revenue draws this liability down'},
+      {id:'cf-defrev', role:'good', reason:'the $110,000 build-up is this month\'s single biggest source of cash'},
+    ]
+  },
+  'bs-debt': {
+    why: "Venture debt principal moves only through financing activity — draws increase it, repayments decrease it — and the outstanding balance drives the interest expense line on the P&L.",
+    mech: 'Financing balance',
+    targets: [
+      {id:'pl-int', role:'good', reason:'the outstanding balance is what generates this month\'s interest charge'},
+      {id:'cf-debt', role:'good', reason:'a draw would increase this balance directly'},
+    ]
+  },
+  'bs-apic': {
+    why: "Paid-in Capital grows when the company raises new equity cash, or when stock-based comp is issued (non-cash). This month it grew purely from SBC.",
+    mech: 'Equity contribution',
+    targets: [
+      {id:'pl-sbc', role:'good', reason:'this month\'s $1,200 SBC expense is what built this balance up'},
+      {id:'cf-equity', role:'good', reason:'a new cash raise would increase this balance too'},
+    ]
+  },
+  'bs-re': {
+    why: "Retained Earnings is the cumulative store of all historical Net Income, less any dividends. This month's loss pulls the balance down.",
+    mech: 'Cumulative P&L history',
+    targets: [{id:'pl-ni', role:'bad', reason:'this month\'s $(9,850) loss is what shrank the balance'}]
+  },
+
+  'cf-ni': {
+    why: "The Cash Flow statement always opens with Net Income from the P&L — the entry point for the indirect-method build.",
+    mech: 'The core bridge line',
+    targets: [{id:'pl-ni', role:'bad', reason:'inherits June\'s $(9,850) loss as its starting figure'}]
+  },
+  'cf-da': {
+    why: "D&A reduced Net Income on the P&L but never touched cash, so it's added back here to undo that non-cash drag.",
+    mech: 'Non-cash add-back',
+    targets: [{id:'pl-da', role:'good', reason:'reverses the $1,000 non-cash charge taken there'}]
+  },
+  'cf-sbc': {
+    why: "Stock-based comp reduced Net Income but settled in equity, not cash, so it's added back here in full.",
+    mech: 'Non-cash add-back',
+    targets: [{id:'pl-sbc', role:'good', reason:'reverses the $1,200 non-cash charge taken there'}]
+  },
+  'cf-commamort': {
+    why: "This month's $500 of commission expense never used cash (the full $6,000 was paid out already), so it's added back here.",
+    mech: 'Non-cash add-back',
+    targets: [{id:'pl-comm', role:'good', reason:'reverses the $500 non-cash portion of that expense'}]
+  },
+  'cf-defrev': {
+    why: "Captures the $110,000 of cash collected this month that hasn't yet hit P&L revenue. The single largest driver of CloudCo's positive cash flow despite a net loss.",
+    mech: 'Working capital change — source of cash',
+    targets: [{id:'bs-defrev', role:'good', reason:'mirrors the liability\'s $110,000 build-up'}]
+  },
+  'cf-ap': {
+    why: "Vendor bills incurred but not yet paid free up cash this month — a classic working-capital source of cash as the business scales spend.",
+    mech: 'Working capital change — source of cash',
+    targets: [{id:'bs-ap', role:'good', reason:'mirrors the $1,800 build-up in unpaid vendor bills'}]
+  },
+  'cf-accrued': {
+    why: "Compensation earned but not yet paid out frees up cash this month — it will reverse as a use of cash once actually paid.",
+    mech: 'Working capital change — source of cash',
+    targets: [{id:'bs-accrued', role:'good', reason:'mirrors the $3,500 build-up in unpaid comp'}]
+  },
+  'cf-defcomm': {
+    why: "The full $6,000 commission was paid in cash, but only $500 hit the P&L. This line removes the $5,500 sitting on the balance sheet as an asset instead of an expense.",
+    mech: 'Working capital change — use of cash',
+    targets: [{id:'bs-defcomm', role:'bad', reason:'reflects cash tied up building this asset'}]
+  },
+  'cf-prepaid': {
+    why: "Cash paid upfront for software and insurance coverage that hasn't been expensed yet is a use of cash this month.",
+    mech: 'Working capital change — use of cash',
+    targets: [{id:'bs-prepaid', role:'bad', reason:'reflects cash tied up in prepaid coverage'}]
+  },
+  'cf-ar': {
+    why: "A rising AR balance means revenue was recognized but not yet collected, so it gets subtracted here. It's $0 this month since the contract was paid upfront.",
+    mech: 'Working capital change — use of cash',
+    targets: [{id:'bs-ar', role:'bad', reason:'an increase here would directly reduce operating cash'}]
+  },
+  'cf-cfo': {
+    why: "Sums Net Income plus all non-cash add-backs and working capital changes above — the cash actually generated by the core business this month.",
+    mech: 'Operating subtotal',
+    targets: []
+  },
+  'cf-capex': {
+    why: "Cash spent on equipment or capitalized software builds up PP&E on the balance sheet. None this month.",
+    mech: 'Investing outflow',
+    targets: [{id:'bs-ppe', role:'good', reason:'new capex would build this asset back up'}]
+  },
+  'cf-cfi': {why: "Sum of all investing activities — capex, capitalized software, M&A. Zero this month.", mech:'Investing subtotal', targets:[]},
+  'cf-debt': {
+    why: "Drawing or repaying debt principal is a financing activity that directly moves the Venture Debt balance. None this month.",
+    mech: 'Financing activity',
+    targets: [{id:'bs-debt', role:'good', reason:'a draw would increase this balance'}]
+  },
+  'cf-equity': {
+    why: "Cash raised from investors increases Paid-in Capital on the balance sheet. None this month.",
+    mech: 'Financing activity',
+    targets: [{id:'bs-apic', role:'good', reason:'a raise would increase this balance'}]
+  },
+  'cf-cff': {why: "Sum of all financing activities — debt and equity movements. Zero this month.", mech:'Financing subtotal', targets:[]},
+  'cf-net': {
+    why: "CFO + CFI + CFF = the Net Change in Cash, added to beginning cash to produce the ending balance — which must tie exactly to the balance sheet.",
+    mech: 'Statement tie-out',
+    targets: [{id:'bs-cash', role:'good', reason:'hands off the $109,750 increase to become the new Cash balance'}]
+  },
+
+  'pl-gp': {why: "Revenue minus COGS (hosting + customer success/support) — profitability of the core subscription business before operating costs.", mech:'P&L subtotal', targets:[]},
+  'bs-ta': {why: "Sum of all asset accounts: Cash, AR, Deferred Commissions, Prepaids, and PP&E.", mech:'Balance sheet subtotal', targets:[]},
+  'bs-tl': {why: "Sum of all liability accounts: AP, Accrued Payroll, Deferred Revenue, and Venture Debt.", mech:'Balance sheet subtotal', targets:[]},
+  'bs-te': {why: "Sum of all equity accounts. Total Liabilities + Total Equity must equal Total Assets.", mech:'Balance sheet subtotal', targets:[]},
+};
+
+// Adjacency for highlighting: ONLY the explicit forward targets of the hovered line.
+const adjacency = {};
+Object.entries(connections).forEach(([from,data])=>{
+  adjacency[from] = new Set((data.targets||[]).map(t=>t.id));
+});
+
+const stMeta = {
+  pl: {label:'P&L'},
+  bs: {label:'Balance Sheet'},
+  cf: {label:'Cash Flow'},
+};
+const accentVar = {pl:'--pl-accent', bs:'--bs-accent', cf:'--cf-accent'};
+const tintVar   = {pl:'--pl-tint',   bs:'--bs-tint',   cf:'--cf-tint'};
+
+/* ---------------- RENDER LINES ---------------- */
+function renderColumn(containerId, stKey){
+  const container = document.getElementById(containerId);
+  let currentGroup = null;
+  lines.filter(l=>l.st===stKey).forEach(l=>{
+    if(l.group && l.group !== currentGroup){
+      currentGroup = l.group;
+      const gl = document.createElement('div');
+      gl.className = 'group-label';
+      gl.textContent = currentGroup;
+      container.appendChild(gl);
+    }
+    const row = document.createElement('div');
+    const isLinkable = !!connections[l.id];
+    row.className = 'line' + (l.type==='subtotal' ? ' subtotal' : '') + (isLinkable ? ' linkable' : '');
+    row.id = 'row-' + l.id;
+    row.dataset.id = l.id;
+    row.innerHTML = `<span class="name">${l.name}</span><span class="val">${l.val}</span>`;
+    container.appendChild(row);
+
+    if(isLinkable){
+      row.addEventListener('mouseenter', ()=>{ if(!pinned) highlight(l.id, false); });
+      row.addEventListener('mouseleave', ()=>{ if(!pinned) clearHighlight(); });
+      row.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        if(pinned === l.id){ pinned = null; clearHighlight(); }
+        else { pinned = l.id; highlight(l.id, true); }
+      });
+    }
+  });
+}
+renderColumn('pl-lines','pl');
+renderColumn('bs-lines','bs');
+renderColumn('cf-lines','cf');
+
+/* ---------------- HIGHLIGHT LOGIC ---------------- */
+let pinned = null;
+
+function highlight(id, isPinned){
+  const data = connections[id] || {targets:[]};
+  const roleById = {};
+  (data.targets||[]).forEach(t=> roleById[t.id] = t.role);
+  const activeSet = new Set([id, ...Object.keys(roleById)]);
+
+  document.querySelectorAll('.line').forEach(row=>{
+    const rid = row.dataset.id;
+    if(!rid) return;
+    row.classList.remove('active','dim');
+    row.style.removeProperty('--row-accent');
+    row.style.removeProperty('--row-tint');
+    if(activeSet.has(rid)){
+      row.classList.add('active');
+      if(rid === id){
+        const stKey = lines.find(l=>l.id===rid).st;
+        row.style.setProperty('--row-accent', `var(${accentVar[stKey]})`);
+        row.style.setProperty('--row-tint', `var(${tintVar[stKey]})`);
+      } else {
+        const role = roleById[rid];
+        row.style.setProperty('--row-accent', role==='good' ? 'var(--good)' : 'var(--bad)');
+        row.style.setProperty('--row-tint', role==='good' ? 'var(--good-bg)' : 'var(--bad-bg)');
+      }
+    } else if(row.classList.contains('linkable') || row.classList.contains('subtotal')){
+      row.classList.add('dim');
+    }
+  });
+
+  drawLinks(id);
+  showDetail(id, isPinned);
+}
+
+function clearHighlight(){
+  document.querySelectorAll('.line').forEach(row=>{
+    row.classList.remove('active','dim');
+    row.style.removeProperty('--row-accent');
+    row.style.removeProperty('--row-tint');
+  });
+  drawLinks(null);
+  hideDetail();
+}
+
+document.getElementById('board').addEventListener('click', (e)=>{
+  if(!e.target.closest('.line.linkable')){
+    if(pinned){ pinned = null; clearHighlight(); }
+  }
+});
+document.addEventListener('keydown', (e)=>{
+  if(e.key === 'Escape' && pinned){ pinned = null; clearHighlight(); }
+});
+
+/* ---------------- SVG CONNECTOR LINES ---------------- */
+const svg = document.getElementById('linklayer');
+const board = document.getElementById('board');
+
+function drawLinks(fromId){
+  svg.innerHTML = '';
+  if(!fromId) return;
+  const data = connections[fromId];
+  if(!data || !data.targets || data.targets.length===0) return;
+
+  const boardRect = board.getBoundingClientRect();
+  const fromEl = document.getElementById('row-'+fromId);
+  if(!fromEl) return;
+  const fromRect = fromEl.getBoundingClientRect();
+
+  data.targets.forEach(t=>{
+    const toEl = document.getElementById('row-'+t.id);
+    if(!toEl) return;
+    const toRect = toEl.getBoundingClientRect();
+
+    let x1 = fromRect.right - boardRect.left;
+    let y1 = fromRect.top + fromRect.height/2 - boardRect.top;
+    let x2 = toRect.left - boardRect.left;
+    let y2 = toRect.top + toRect.height/2 - boardRect.top;
+
+    if(toRect.left < fromRect.left){
+      x1 = fromRect.left - boardRect.left;
+      x2 = toRect.right - boardRect.left;
+    }
+
+    const dx = Math.max(40, Math.abs(x2-x1) * 0.45);
+    const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+    const d = `M ${x1} ${y1} C ${x1 + (x2>x1?dx:-dx)} ${y1}, ${x2 - (x2>x1?dx:-dx)} ${y2}, ${x2} ${y2}`;
+    path.setAttribute('d', d);
+    path.setAttribute('class', 'linkpath ' + (t.role === 'good' ? 'good' : 'bad'));
+    svg.appendChild(path);
+    requestAnimationFrame(()=>path.classList.add('show'));
+  });
+}
+
+window.addEventListener('resize', ()=>{ if(pinned) drawLinks(pinned); });
+
+/* ---------------- DETAIL PANEL ---------------- */
+const detail = document.getElementById('detail');
+
+function showDetail(id, isPinned){
+  const data = connections[id];
+  const line = lines.find(l=>l.id===id);
+  if(!data){
+    detail.innerHTML = `<div class="placeholder">"${line.name}" is a subtotal with no direct cross-statement link.</div>`;
+    return;
+  }
+
+  const calloutsHtml = (data.targets||[]).map(t=>{
+    const tline = lines.find(l=>l.id===t.id);
+    const badgeText = t.role === 'good' ? 'GOOD GUY TO' : 'BAD GUY TO';
+    return `<div class="callout ${t.role}">
+      <span class="callout-badge">${badgeText}</span>
+      <span class="callout-text"><span class="target">${stMeta[tline.st].label} · ${tline.name}</span> — ${t.reason}</span>
+    </div>`;
+  }).join('');
+
+  detail.innerHTML = `
+    <div class="detail-inner">
+      <div class="detail-head">
+        <span class="source-chip ${line.st}">${stMeta[line.st].label}</span>
+        <h3 class="detail-title">${line.name}</h3>
+      </div>
+      ${calloutsHtml ? `<div class="callouts">${calloutsHtml}</div>` : ''}
+      <div class="detail-body">${data.why}</div>
+      <div class="mech-tag">${data.mech}</div>
+    </div>
+  `;
+}
+
+function hideDetail(){
+  detail.innerHTML = `<div class="placeholder">Hover or click a line item above to trace its connections.</div>`;
+}
+</script>
+</body>
+</html>

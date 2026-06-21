@@ -101,6 +101,61 @@
     .nav-link.vis { opacity: 1; transform: translateY(0); }
     .nav-link.vis:hover { transform: translateY(-3px); color: rgba(255,255,255,1); }
 
+    /* ── DROPDOWN NAV ───────────────────────── */
+    .nav-dd {
+      position: relative; display: flex; align-items: center;
+      opacity: 0; transform: translateY(-6px);
+      transition: opacity .5s var(--ease) 50ms, transform .5s var(--ease) 50ms;
+    }
+    .nav-dd.vis { opacity: 1; transform: translateY(0); }
+    .nav-dd.vis:hover { transform: translateY(-3px); }
+    .nav-dd-trigger {
+      font-size: .7rem; font-weight: 600; letter-spacing: .12em;
+      text-transform: uppercase; color: rgba(255,255,255,.65);
+      cursor: none;
+      display: flex; align-items: center; gap: .35rem;
+      transition: color .2s; user-select: none;
+    }
+    .nav-dd:hover .nav-dd-trigger { color: rgba(255,255,255,1); }
+    .nav-dd-chevron {
+      width: 10px; height: 10px; display: inline-block;
+      transition: transform .2s ease;
+    }
+    .nav-dd:hover .nav-dd-chevron { transform: rotate(180deg); }
+    .nav-dd-menu {
+      position: absolute; top: calc(100% + 14px); right: 0;
+      background: rgba(9,18,33,.97);
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 12px;
+      padding: .4rem;
+      min-width: 230px;
+      opacity: 0; pointer-events: none;
+      transform: translateY(-6px);
+      transition: opacity .18s ease, transform .18s ease;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      z-index: 500;
+    }
+    .nav-dd:hover .nav-dd-menu {
+      opacity: 1; pointer-events: all;
+      transform: translateY(0);
+    }
+    .nav-dd-item {
+      display: block;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: .63rem; font-weight: 600; letter-spacing: .1em;
+      text-transform: uppercase; color: rgba(255,255,255,.55);
+      text-decoration: none;
+      padding: .6rem .9rem;
+      border-radius: 8px;
+      transition: background .15s, color .15s;
+      cursor: none;
+    }
+    .nav-dd-item:hover {
+      background: rgba(255,255,255,.07);
+      color: rgba(255,255,255,1);
+    }
+
     /* ── HERO ────────────────────────────────── */
     #hero {
       position: fixed; inset: 0; z-index: 300;
@@ -714,7 +769,19 @@
 <nav id="nav">
   <a href="#" class="nav-logo" id="navLogo">Silvana Bernhardt</a>
   <div class="nav-right">
-    <a href="samples.html" class="nav-link">Samples</a>
+    <div class="nav-dd" id="navDd">
+      <span class="nav-dd-trigger">
+        Work Samples
+        <svg class="nav-dd-chevron" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M2 3.5L5 6.5L8 3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </span>
+      <div class="nav-dd-menu">
+        <a href="samples.html#process-improvement" class="nav-dd-item">Process Improvement</a>
+        <a href="samples.html#business-partnering" class="nav-dd-item">Cross Functional Business Partnering</a>
+        <a href="samples.html#saas-fpa" class="nav-dd-item">SaaS FP&amp;A &amp; Strategic Finance</a>
+      </div>
+    </div>
     <a href="https://www.linkedin.com/in/silvanabernhardt/" target="_blank" rel="noopener" class="nav-link">LinkedIn</a>
     <a href="mailto:sbsilvanabernhardt@gmail.com" class="nav-link">Email</a>
   </div>
@@ -885,7 +952,7 @@
                 <span class="cb-tag">Dynamic Arrays</span>
                 <span class="cb-tag">Pivot Charts</span>
               </div>
-              <a href="samples.html#excel-modelling" class="cb-cta" style="margin-top:.8rem">View Sample Files ↗</a>
+              <a href="samples.html#saas-fpa" class="cb-cta" style="margin-top:.8rem">View Sample Files ↗</a>
             </div>
             <div>
               <p class="cb-label">Key Projects</p>
@@ -1136,6 +1203,7 @@
       navStrip.classList.add('vis');
       navLogo.classList.add('vis');
       navLinks.forEach(l => l.classList.add('vis'));
+      document.getElementById('navDd').classList.add('vis');
     }, 280);
   }
 
@@ -1149,6 +1217,7 @@
     navStrip.classList.remove('vis');
     navLogo.classList.remove('vis');
     navLinks.forEach(l => l.classList.remove('vis'));
+    document.getElementById('navDd').classList.remove('vis');
     sectionLbl.classList.remove('vis');
     progressEl.style.width = '0%';
     cards.forEach(c => { c.dataset.off = '5'; });

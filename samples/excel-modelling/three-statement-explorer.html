@@ -137,6 +137,7 @@
   .linkpath.show{opacity:0.7;}
   .linkpath.good{stroke:var(--good);}
   .linkpath.bad{stroke:var(--bad);}
+  .linkpath.mixed{stroke:var(--violet); stroke-dasharray:5 4;}
 
   .statement{
     background:var(--paper);
@@ -320,6 +321,19 @@
     border-radius:5px;
     font-weight:600;
   }
+  .cond-tag{
+    display:block;
+    margin-top:4px;
+    font-size:11.5px;
+    font-style:italic;
+    color:var(--ink-faint);
+  }
+  .cond-tag::before{
+    content:'Condition: ';
+    font-style:normal;
+    font-weight:700;
+    color:var(--ink-dim);
+  }
 
   .detail-body{
     font-size:13.5px;
@@ -495,248 +509,325 @@ const lines = [
 
 const connections = {
   'pl-rev': {
-    why: "Only <b>$10,000</b> of the $120,000 annual contract is recognized as revenue this month. The other <b>$110,000</b> already sits in cash but hasn't been earned yet, so it stays parked in Deferred Revenue until future months recognize it.",
+    why: "Only <b>$10,000</b> of the $120,000 annual contract is recognized as revenue this month. What happens to the other $110,000 on the balance sheet depends entirely on <b>when cash was actually collected</b> relative to when the invoice was sent.",
     mech: 'Revenue recognition timing',
     targets: [
-      {id:'bs-defrev', role:'bad', reason:'draws the balance down by $10,000 as it converts to earned revenue'},
+      {id:'bs-defrev', role:'bad', cond:'if billed/collected ahead of recognition (the usual SaaS case)', reason:'draws the balance down by $10,000 as it converts to earned revenue'},
+      {id:'bs-ar', role:'good', cond:'if invoiced but not yet collected (Net 30/60 terms)', reason:'revenue recognized without cash in hand builds this asset instead'},
+      {id:'cf-ni', role:'good', cond:'always — flows through Net Income regardless of collection timing', reason:'the $10,000 recognized this month lifts the CF statement\'s starting line'},
     ]
   },
   'pl-cogs-host': {
-    why: "Cloud hosting costs are paid in cash the same month they're incurred — no timing gap, so this flows straight through Net Income with no balance sheet residue.",
-    mech: 'Cash expense — no timing difference',
-    targets: [{id:'cf-ni', role:'bad', reason:'lowers Net Income, the CF statement\'s starting line'}]
+    why: "Cloud hosting costs almost always hit the balance sheet somewhere — the only question is whether the vendor was paid this month or the bill is still sitting unpaid.",
+    mech: 'Cash expense, or accrued if unpaid',
+    targets: [
+      {id:'cf-ni', role:'bad', cond:'always', reason:'lowers Net Income, the CF statement\'s starting line'},
+      {id:'bs-ap', role:'good', cond:'if the hosting invoice is unpaid at month-end (common — AWS/GCP bill monthly in arrears)', reason:'an unpaid hosting bill builds Accounts Payable instead of using cash'},
+      {id:'bs-cash', role:'bad', cond:'if paid in cash this month', reason:'cash goes straight out the door with no balance sheet residue'},
+    ]
   },
   'pl-cogs-cs': {
-    why: "Customer success and support salaries are a cash cost paid out as incurred, flowing straight through to Net Income.",
-    mech: 'Cash expense — no timing difference',
-    targets: [{id:'cf-ni', role:'bad', reason:'lowers Net Income, the CF statement\'s starting line'}]
+    why: "Customer success and support is mostly payroll. The balance sheet impact depends on whether the team was paid out in the same month the expense was incurred.",
+    mech: 'Cash expense, or accrued if unpaid',
+    targets: [
+      {id:'cf-ni', role:'bad', cond:'always', reason:'lowers Net Income, the CF statement\'s starting line'},
+      {id:'bs-accrued', role:'good', cond:'if payroll runs after month-end (e.g. paid on the 5th for the prior month)', reason:'unpaid CS/support comp at month-end builds this accrual'},
+    ]
   },
   'pl-comm': {
-    why: "Only $500 of the $6,000 commission paid is expensed this month. The unamortized $5,500 still sits as an asset, and since no new cash left the business this month for this expense, it's added back on the Cash Flow statement.",
+    why: "Only $500 of the $6,000 commission paid is expensed this month. The unamortized $5,500 still sits as an asset, and since the related cash was already paid out upfront, the non-cash portion is added back on the Cash Flow statement. (Some smaller SaaS companies choose to expense commissions immediately instead of capitalizing — see the alternate scenario.)",
     mech: 'Capitalized cost, amortized to expense',
     targets: [
-      {id:'bs-defcomm', role:'bad', reason:'the asset amortizes down by $500 as it\'s expensed'},
-      {id:'cf-commamort', role:'good', reason:'gets added back since the $500 was non-cash this month'},
+      {id:'bs-defcomm', role:'bad', cond:'if commissions are capitalized under ASC 340 (the common case)', reason:'the asset amortizes down by $500 as it\'s expensed'},
+      {id:'cf-commamort', role:'good', cond:'if capitalized', reason:'gets added back since the $500 was non-cash this month'},
+      {id:'cf-ni', role:'bad', cond:'if the company instead expenses commissions immediately (no capitalization policy)', reason:'the full $6,000 would hit Net Income at once with no balance sheet asset created'},
     ]
   },
   'pl-mkt': {
-    why: "Demand gen and marketing spend (ads, events, content) is paid in cash as incurred — no capitalization, so it flows straight through Net Income.",
-    mech: 'Cash expense — no timing difference',
-    targets: [{id:'cf-ni', role:'bad', reason:'lowers Net Income, the CF statement\'s starting line'}]
+    why: "Marketing spend (ads, events, content, tools) is usually paid close to when it's incurred, but invoiced agency/event costs can lag — and annual marketing software subscriptions get prepaid.",
+    mech: 'Cash expense — or accrued/prepaid depending on vendor terms',
+    targets: [
+      {id:'cf-ni', role:'bad', cond:'always', reason:'lowers Net Income, the CF statement\'s starting line'},
+      {id:'bs-ap', role:'good', cond:'if an agency or event vendor invoice is unpaid at month-end', reason:'unpaid marketing vendor bills build Accounts Payable instead of using cash'},
+      {id:'bs-prepaid', role:'bad', cond:'if marketing tools/software were paid annually in advance', reason:'the upfront annual payment draws down the prepaid balance as it\'s expensed each month'},
+    ]
   },
   'pl-rd': {
-    why: "Product & Engineering salaries are mostly cash costs (unless specific projects qualify for software capitalization). They flow through Net Income and also accrue partially into payroll liabilities if paid after month-end.",
-    mech: 'Cash expense, partly accrued',
+    why: "Product & Engineering salaries are mostly cash costs, but two real-world nuances matter: payroll timing (accrual) and whether any engineering time qualifies for capitalization under software development accounting rules.",
+    mech: 'Cash expense, or accrued/capitalized depending on policy',
     targets: [
-      {id:'cf-ni', role:'bad', reason:'lowers Net Income, the CF statement\'s starting line'},
-      {id:'bs-accrued', role:'good', reason:'any unpaid portion at month-end builds this accrual'},
+      {id:'cf-ni', role:'bad', cond:'always (for the expensed portion)', reason:'lowers Net Income, the CF statement\'s starting line'},
+      {id:'bs-accrued', role:'good', cond:'if payroll is paid after month-end (common — paid on a lag)', reason:'any unpaid portion at month-end builds this accrual'},
+      {id:'bs-ppe', role:'good', cond:'if engineering time on qualifying internal-use software projects is capitalized', reason:'capitalized dev costs build this asset instead of hitting expense immediately'},
     ]
   },
   'pl-ga': {
-    why: "Finance, HR, and legal costs are largely cash expenses, flowing straight through Net Income to Cash Flow with no adjustment needed.",
-    mech: 'Cash expense — no timing difference',
-    targets: [{id:'cf-ni', role:'bad', reason:'lowers Net Income, the CF statement\'s starting line'}]
+    why: "Finance, HR, and legal costs touch the balance sheet in a few common ways: unpaid vendor invoices (legal/accounting fees), payroll run after month-end, or insurance and software paid annually in advance.",
+    mech: 'Cash expense — or accrued/prepaid/payable depending on vendor and payroll terms',
+    targets: [
+      {id:'cf-ni', role:'bad', cond:'always', reason:'lowers Net Income, the CF statement\'s starting line'},
+      {id:'bs-ap', role:'good', cond:'if a legal or accounting firm invoice is unpaid at month-end', reason:'unpaid professional services bills build Accounts Payable instead of using cash'},
+      {id:'bs-accrued', role:'good', cond:'if G&A payroll runs after month-end', reason:'unpaid G&A salaries at month-end build this accrual'},
+      {id:'bs-prepaid', role:'bad', cond:'if annual insurance or compliance software was paid upfront', reason:'the upfront payment draws down as it\'s expensed ratably each month'},
+    ]
   },
   'pl-sbc': {
-    why: "Stock-based comp reduces Net Income but never touches cash — it's settled in equity, not dollars. It's added back on the Cash Flow statement and increases Paid-in Capital on the balance sheet.",
+    why: "Stock-based comp reduces Net Income but never touches cash — it's settled in equity, not dollars. It's added back on the Cash Flow statement and increases Paid-in Capital on the balance sheet. This is one of the few P&L lines with no \"it depends\" — it's always non-cash by definition.",
     mech: 'Non-cash expense, add-back',
     targets: [
-      {id:'bs-apic', role:'good', reason:'the $1,200 expensed here builds up Paid-in Capital instead of using cash'},
-      {id:'cf-sbc', role:'good', reason:'gets added back since it never used any cash'},
+      {id:'bs-apic', role:'good', cond:'always', reason:'the $1,200 expensed here builds up Paid-in Capital instead of using cash'},
+      {id:'cf-sbc', role:'good', cond:'always', reason:'gets added back since it never used any cash'},
     ]
   },
   'pl-da': {
-    why: "D&A reduces the carrying value of PP&E on the balance sheet, but no cash actually left the business — so it's added back on the Cash Flow statement to recover the cash Net Income understated.",
+    why: "D&A reduces the carrying value of PP&E on the balance sheet, but no cash actually left the business this month — so it's added back on the Cash Flow statement. Always non-cash by definition, regardless of company specifics.",
     mech: 'Non-cash expense, add-back',
     targets: [
-      {id:'bs-ppe', role:'bad', reason:'shrinks the asset balance by $1,000'},
-      {id:'cf-da', role:'good', reason:'gets added back since it never used any cash'},
+      {id:'bs-ppe', role:'bad', cond:'always', reason:'shrinks the asset balance by $1,000'},
+      {id:'cf-da', role:'good', cond:'always', reason:'gets added back since it never used any cash'},
     ]
   },
   'pl-ebit': {
-    why: "Operating Income is Gross Profit less all operating costs (S&M, R&D, G&A, SBC, D&A) — the profitability of the core business before financing costs.",
+    why: "Operating Income is Gross Profit less all operating costs (S&M, R&D, G&A, SBC, D&A) — the profitability of the core business before financing costs. As a subtotal, it doesn't create its own balance sheet account; it inherits the links of everything that rolls into it.",
     mech: 'P&L subtotal',
     targets: []
   },
   'pl-int': {
-    why: "Interest on the venture debt facility is a cash cost (unless explicitly deferred/PIK), reducing Net Income and flowing through to operating cash flow.",
-    mech: 'Cash expense tied to Debt balance',
+    why: "Interest on the venture debt facility is usually a cash cost, but some venture debt and convertible notes allow interest to be paid-in-kind (PIK), meaning it accrues onto the principal instead of being paid in cash.",
+    mech: 'Cash expense — or accrued/PIK depending on loan terms',
     targets: [
-      {id:'bs-debt', role:'good', reason:'this expense only exists because of the outstanding debt balance'},
-      {id:'cf-ni', role:'bad', reason:'lowers Net Income, the CF statement\'s starting line'},
+      {id:'bs-debt', role:'good', cond:'always, as the source of the charge — and PIK interest specifically increases this balance instead of using cash', reason:'this expense only exists because of the outstanding debt balance'},
+      {id:'cf-ni', role:'bad', cond:'if paid in cash (the typical case)', reason:'lowers Net Income, the CF statement\'s starting line'},
+      {id:'bs-accrued', role:'good', cond:'if interest is accrued but not yet paid at month-end', reason:'unpaid interest at month-end builds an accrued liability instead of using cash'},
     ]
   },
   'pl-ni': {
-    why: "Net Income is the master bridge line: it builds up Retained Earnings on the balance sheet, and it's the literal starting point of the Cash Flow statement.",
+    why: "Net Income is the master bridge line: it builds up Retained Earnings on the balance sheet, and it's the literal starting point of the Cash Flow statement. No \"it depends\" here — every dollar of Net Income flows both places, always.",
     mech: 'The core bridge line',
     targets: [
-      {id:'bs-re', role:'bad', reason:'a $(9,850) loss pulls Retained Earnings down'},
-      {id:'cf-ni', role:'good', reason:'hands off as the opening line the CF statement builds from'},
+      {id:'bs-re', role:'bad', cond:'always', reason:'a $(9,850) loss pulls Retained Earnings down'},
+      {id:'cf-ni', role:'good', cond:'always', reason:'hands off as the opening line the CF statement builds from'},
     ]
   },
 
   'bs-cash': {
-    why: "Ending Cash on the balance sheet is purely a passenger — it must always equal Beginning Cash plus the Net Change in Cash computed on the Cash Flow statement. This is the master tie-out check of any model.",
+    why: "Ending Cash on the balance sheet is purely a passenger — it must always equal Beginning Cash plus the Net Change in Cash computed on the Cash Flow statement. This is the master tie-out check of any model, with no exceptions. Notably, Cash is one of the only balance sheet lines with <b>no direct P&L link</b> — by definition, the P&L never touches cash directly, only through the CF statement's translation of accrual results into cash terms.",
     mech: 'Statement tie-out',
-    targets: [{id:'cf-net', role:'good', reason:'directly receives the period\'s $109,750 increase'}]
+    targets: [{id:'cf-net', role:'good', cond:'always', reason:'directly receives the period\'s $109,750 increase'}]
   },
   'bs-ar': {
-    why: "AR represents revenue recognized on the P&L that hasn't been collected yet. It's $0 here since the contract was prepaid in full — but generally, a rising AR balance quietly drains cash even as revenue looks healthy.",
+    why: "AR represents revenue recognized on the P&L that hasn't been collected yet. It's $0 here since the contract was prepaid in full — but generally, a rising AR balance quietly drains cash even as revenue looks healthy. The risk depends entirely on customer payment behavior and billing terms.",
     mech: 'Recognized but uncollected revenue',
     targets: [
-      {id:'pl-rev', role:'good', reason:'AR only exists because revenue was already recognized here'},
-      {id:'cf-ar', role:'bad', reason:'any increase in AR would show up as a use of cash'},
+      {id:'pl-rev', role:'good', cond:'if billing terms create a collection lag (e.g. Net 30/60)', reason:'AR only exists because revenue was already recognized here before cash arrived'},
+      {id:'cf-ar', role:'bad', cond:'if the balance increases period over period', reason:'a growing AR balance shows up as a use of cash'},
+      {id:'cf-ar', role:'good', cond:'if the balance decreases (customers catching up on payments)', reason:'collecting on old invoices would be a source of cash'},
     ]
   },
   'bs-defcomm': {
-    why: "This asset holds the $5,500 of commission cost paid in cash but not yet expensed. As it amortizes in future months, it feeds into commission expense on the P&L.",
+    why: "This asset holds the $5,500 of commission cost paid in cash but not yet expensed. As it amortizes in future months, it feeds into commission expense on the P&L. Only exists at all if the company capitalizes commissions — otherwise this account would be zero.",
     mech: 'Capitalized cost asset',
     targets: [
-      {id:'pl-comm', role:'bad', reason:'the asset bleeds out $500/month into this expense line'},
-      {id:'cf-defcomm', role:'bad', reason:'building this asset used $6,000 of cash this month'},
+      {id:'pl-comm', role:'bad', cond:'as it amortizes each month', reason:'the asset bleeds out $500/month into this expense line'},
+      {id:'cf-defcomm', role:'bad', cond:'in the month the commission is paid', reason:'building this asset used $6,000 of cash this month'},
     ]
   },
   'bs-prepaid': {
-    why: "Prepaid software licenses and insurance are paid in cash upfront, then expensed gradually over the coverage period — so building this balance uses cash now for expense recognized later.",
+    why: "Prepaid software licenses and insurance are paid in cash upfront, then expensed gradually over the coverage period — so building this balance uses cash now for expense recognized later, typically tied to G&A or Marketing tooling.",
     mech: 'Prepaid cost asset',
-    targets: [{id:'cf-prepaid', role:'bad', reason:'paying for coverage upfront used $2,400 of cash this month'}]
+    targets: [
+      {id:'cf-prepaid', role:'bad', cond:'in the month the prepayment is made', reason:'paying for coverage upfront used $2,400 of cash this month'},
+      {id:'pl-ga', role:'bad', cond:'as it amortizes into G&A expense (e.g. insurance)', reason:'the balance draws down as coverage is consumed each month'},
+      {id:'pl-mkt', role:'bad', cond:'as it amortizes into Marketing expense (e.g. annual tool subscriptions)', reason:'the balance draws down as the subscription period is consumed'},
+    ]
   },
   'bs-ppe': {
-    why: "PP&E / Capitalized Software shrinks as D&A is expensed on the P&L, and grows whenever new capex hits the Cash Flow statement's investing section.",
+    why: "PP&E / Capitalized Software shrinks as D&A is expensed on the P&L, and grows whenever new capex or capitalized engineering time hits the books.",
     mech: 'Long-term asset roll-forward',
     targets: [
-      {id:'pl-da', role:'bad', reason:'D&A erodes this balance by $1,000 every month'},
-      {id:'cf-capex', role:'good', reason:'new capex would replenish this balance'},
+      {id:'pl-da', role:'bad', cond:'always, each month', reason:'D&A erodes this balance by $1,000 every month'},
+      {id:'cf-capex', role:'good', cond:'if new equipment or software is purchased', reason:'new capex would replenish this balance'},
+      {id:'pl-rd', role:'good', cond:'if engineering time is capitalized rather than expensed', reason:'capitalized dev work builds this asset instead of hitting R&D expense directly'},
     ]
   },
   'bs-ap': {
-    why: "Accounts Payable is vendor bills incurred but not yet paid in cash — a built-in, interest-free financing source as it grows.",
+    why: "Accounts Payable is vendor bills incurred but not yet paid in cash — a built-in, interest-free financing source as it grows. Can originate from hosting, marketing vendors, or professional services, depending on which bills are sitting unpaid.",
     mech: 'Unpaid vendor bills',
-    targets: [{id:'cf-ap', role:'good', reason:'a growing AP balance is a source of cash this month'}]
+    targets: [
+      {id:'cf-ap', role:'good', cond:'if the balance increases period over period', reason:'a growing AP balance is a source of cash this month'},
+      {id:'cf-ap', role:'bad', cond:'if the balance decreases (catching up on old bills)', reason:'paying down old vendor bills would be a use of cash'},
+      {id:'pl-cogs-host', role:'good', cond:'if the unpaid bill is a hosting invoice', reason:'an unpaid AWS/GCP bill is a common source of this balance'},
+      {id:'pl-ga', role:'good', cond:'if the unpaid bill is legal/accounting fees', reason:'unpaid professional services invoices are a common source of this balance'},
+    ]
   },
   'bs-accrued': {
-    why: "Accrued payroll and bonuses represent compensation earned by employees but not yet paid out in cash — common for R&D and other headcount-heavy teams paid on a lag.",
-    mech: 'Unpaid compensation',
+    why: "Accrued payroll and bonuses represent compensation earned by employees but not yet paid out in cash — common for any team paid on a lag, and also captures accrued (unpaid) interest if applicable.",
+    mech: 'Unpaid compensation or interest',
     targets: [
-      {id:'pl-rd', role:'good', reason:'unpaid R&D comp at month-end is what builds this accrual'},
-      {id:'cf-accrued', role:'good', reason:'a growing accrual is a source of cash this month'},
+      {id:'pl-rd', role:'good', cond:'if R&D payroll runs after month-end', reason:'unpaid R&D comp at month-end is a common driver of this accrual'},
+      {id:'pl-cogs-cs', role:'good', cond:'if CS/support payroll runs after month-end', reason:'unpaid support team comp at month-end also builds this accrual'},
+      {id:'pl-ga', role:'good', cond:'if G&A payroll runs after month-end', reason:'unpaid finance/HR/legal comp at month-end also builds this accrual'},
+      {id:'cf-accrued', role:'good', cond:'if the balance increases period over period', reason:'a growing accrual is a source of cash this month'},
     ]
   },
   'bs-defrev': {
     why: "The single most important SaaS balance sheet line: cash already collected for service not yet delivered. It grows with new billings and shrinks as revenue is recognized — the period change flows through Cash Flow from Operations.",
     mech: 'Unearned revenue liability',
     targets: [
-      {id:'pl-rev', role:'bad', reason:'recognizing revenue draws this liability down'},
-      {id:'cf-defrev', role:'good', reason:'the $110,000 build-up is this month\'s single biggest source of cash'},
+      {id:'pl-rev', role:'bad', cond:'every month, as the contract term is recognized ratably', reason:'recognizing revenue draws this liability down'},
+      {id:'cf-defrev', role:'good', cond:'if new billings exceed revenue recognized (growth/prepay case)', reason:'the $110,000 build-up is this month\'s single biggest source of cash'},
+      {id:'cf-defrev', role:'bad', cond:'if revenue recognized exceeds new billings (e.g. a slow new-bookings month)', reason:'the balance would shrink, becoming a use of cash on the CF statement'},
     ]
   },
   'bs-debt': {
-    why: "Venture debt principal moves only through financing activity — draws increase it, repayments decrease it — and the outstanding balance drives the interest expense line on the P&L.",
+    why: "Venture debt principal moves only through financing activity — draws increase it, repayments decrease it — and the outstanding balance drives the interest expense line on the P&L. PIK interest is the one case where the P&L can increase this balance directly.",
     mech: 'Financing balance',
     targets: [
-      {id:'pl-int', role:'good', reason:'the outstanding balance is what generates this month\'s interest charge'},
-      {id:'cf-debt', role:'good', reason:'a draw would increase this balance directly'},
+      {id:'pl-int', role:'good', cond:'always, as the source of the interest charge', reason:'the outstanding balance is what generates this month\'s interest charge'},
+      {id:'cf-debt', role:'good', cond:'if the company draws on the facility', reason:'a draw would increase this balance directly'},
+      {id:'cf-debt', role:'bad', cond:'if the company repays principal', reason:'a repayment would decrease this balance and use cash'},
     ]
   },
   'bs-apic': {
     why: "Paid-in Capital grows when the company raises new equity cash, or when stock-based comp is issued (non-cash). This month it grew purely from SBC.",
     mech: 'Equity contribution',
     targets: [
-      {id:'pl-sbc', role:'good', reason:'this month\'s $1,200 SBC expense is what built this balance up'},
-      {id:'cf-equity', role:'good', reason:'a new cash raise would increase this balance too'},
+      {id:'pl-sbc', role:'good', cond:'every month, as SBC is expensed', reason:'this month\'s $1,200 SBC expense is what built this balance up'},
+      {id:'cf-equity', role:'good', cond:'if the company raises new equity cash', reason:'a new cash raise would increase this balance too'},
     ]
   },
   'bs-re': {
-    why: "Retained Earnings is the cumulative store of all historical Net Income, less any dividends. This month's loss pulls the balance down.",
+    why: "Retained Earnings is the cumulative store of all historical Net Income, less any dividends. This month's loss pulls the balance down; a profitable month would push it back up.",
     mech: 'Cumulative P&L history',
-    targets: [{id:'pl-ni', role:'bad', reason:'this month\'s $(9,850) loss is what shrank the balance'}]
+    targets: [
+      {id:'pl-ni', role:'bad', cond:'in loss months (like this one)', reason:'this month\'s $(9,850) loss is what shrank the balance'},
+      {id:'pl-ni', role:'good', cond:'in profitable months', reason:'positive Net Income would build this balance up instead'},
+    ]
+  },
+  'bs-ta': {
+    why: "Sum of all asset accounts: Cash, AR, Deferred Commissions, Prepaids, and PP&E. As a subtotal, it inherits the links of everything underneath it rather than creating new ones.",
+    mech:'Balance sheet subtotal',
+    targets:[]
+  },
+  'bs-tl': {
+    why: "Sum of all liability accounts: AP, Accrued Payroll, Deferred Revenue, and Venture Debt. As a subtotal, it inherits the links of everything underneath it.",
+    mech:'Balance sheet subtotal',
+    targets:[]
+  },
+  'bs-te': {
+    why: "Sum of all equity accounts. Total Liabilities + Total Equity must equal Total Assets — the fundamental balance sheet identity, true in every period without exception.",
+    mech:'Balance sheet subtotal',
+    targets:[]
   },
 
   'cf-ni': {
-    why: "The Cash Flow statement always opens with Net Income from the P&L — the entry point for the indirect-method build.",
+    why: "The Cash Flow statement always opens with Net Income from the P&L — the entry point for the indirect-method build. No exceptions; every dollar of P&L profit or loss starts here.",
     mech: 'The core bridge line',
-    targets: [{id:'pl-ni', role:'bad', reason:'inherits June\'s $(9,850) loss as its starting figure'}]
+    targets: [{id:'pl-ni', role:'bad', cond:'always', reason:'inherits June\'s $(9,850) loss as its starting figure'}]
   },
   'cf-da': {
-    why: "D&A reduced Net Income on the P&L but never touched cash, so it's added back here to undo that non-cash drag.",
+    why: "D&A reduced Net Income on the P&L but never touched cash, so it's added back here to undo that non-cash drag. Always applies, with no scenario where D&A is cash.",
     mech: 'Non-cash add-back',
-    targets: [{id:'pl-da', role:'good', reason:'reverses the $1,000 non-cash charge taken there'}]
+    targets: [{id:'pl-da', role:'good', cond:'always', reason:'reverses the $1,000 non-cash charge taken there'}]
   },
   'cf-sbc': {
-    why: "Stock-based comp reduced Net Income but settled in equity, not cash, so it's added back here in full.",
+    why: "Stock-based comp reduced Net Income but settled in equity, not cash, so it's added back here in full. Always non-cash by definition.",
     mech: 'Non-cash add-back',
-    targets: [{id:'pl-sbc', role:'good', reason:'reverses the $1,200 non-cash charge taken there'}]
+    targets: [{id:'pl-sbc', role:'good', cond:'always', reason:'reverses the $1,200 non-cash charge taken there'}]
   },
   'cf-commamort': {
-    why: "This month's $500 of commission expense never used cash (the full $6,000 was paid out already), so it's added back here.",
+    why: "This month's $500 of commission expense never used cash (the full $6,000 was paid out already), so it's added back here — but only if commissions are capitalized in the first place.",
     mech: 'Non-cash add-back',
-    targets: [{id:'pl-comm', role:'good', reason:'reverses the $500 non-cash portion of that expense'}]
+    targets: [{id:'pl-comm', role:'good', cond:'if commissions are capitalized under ASC 340', reason:'reverses the $500 non-cash portion of that expense'}]
   },
   'cf-defrev': {
-    why: "Captures the $110,000 of cash collected this month that hasn't yet hit P&L revenue. The single largest driver of CloudCo's positive cash flow despite a net loss.",
-    mech: 'Working capital change — source of cash',
-    targets: [{id:'bs-defrev', role:'good', reason:'mirrors the liability\'s $110,000 build-up'}]
+    why: "Captures the $110,000 of cash collected this month that hasn't yet hit P&L revenue. The single largest driver of CloudCo's positive cash flow despite a net loss — but this swings the other way in months where recognized revenue outpaces new billings.",
+    mech: 'Working capital change — source or use of cash',
+    targets: [
+      {id:'bs-defrev', role:'good', cond:'if the balance grows (billings > recognized revenue)', reason:'mirrors the liability\'s $110,000 build-up'},
+      {id:'bs-defrev', role:'bad', cond:'if the balance shrinks (recognized revenue > new billings)', reason:'a shrinking deferred revenue balance becomes a use of cash'},
+    ]
   },
   'cf-ap': {
-    why: "Vendor bills incurred but not yet paid free up cash this month — a classic working-capital source of cash as the business scales spend.",
-    mech: 'Working capital change — source of cash',
-    targets: [{id:'bs-ap', role:'good', reason:'mirrors the $1,800 build-up in unpaid vendor bills'}]
+    why: "Vendor bills incurred but not yet paid free up cash this month — a classic working-capital source of cash as the business scales spend. Reverses once those bills are actually paid.",
+    mech: 'Working capital change — source or use of cash',
+    targets: [
+      {id:'bs-ap', role:'good', cond:'if the balance grows (more unpaid bills)', reason:'mirrors the $1,800 build-up in unpaid vendor bills'},
+      {id:'bs-ap', role:'bad', cond:'if the balance shrinks (catching up on payments)', reason:'paying down old bills would use cash instead'},
+    ]
   },
   'cf-accrued': {
-    why: "Compensation earned but not yet paid out frees up cash this month — it will reverse as a use of cash once actually paid.",
-    mech: 'Working capital change — source of cash',
-    targets: [{id:'bs-accrued', role:'good', reason:'mirrors the $3,500 build-up in unpaid comp'}]
+    why: "Compensation earned but not yet paid out frees up cash this month — it will reverse as a use of cash once actually paid out in a future period.",
+    mech: 'Working capital change — source or use of cash',
+    targets: [
+      {id:'bs-accrued', role:'good', cond:'if the balance grows (more unpaid comp)', reason:'mirrors the $3,500 build-up in unpaid comp'},
+      {id:'bs-accrued', role:'bad', cond:'if the balance shrinks (payroll catches up)', reason:'paying out the accrual would use cash instead'},
+    ]
   },
   'cf-defcomm': {
-    why: "The full $6,000 commission was paid in cash, but only $500 hit the P&L. This line removes the $5,500 sitting on the balance sheet as an asset instead of an expense.",
+    why: "The full $6,000 commission was paid in cash, but only $500 hit the P&L. This line removes the $5,500 sitting on the balance sheet as an asset instead of an expense — only relevant if commissions are capitalized.",
     mech: 'Working capital change — use of cash',
-    targets: [{id:'bs-defcomm', role:'bad', reason:'reflects cash tied up building this asset'}]
+    targets: [{id:'bs-defcomm', role:'bad', cond:'if commissions are capitalized (cash paid exceeds expense recognized)', reason:'reflects cash tied up building this asset'}]
   },
   'cf-prepaid': {
-    why: "Cash paid upfront for software and insurance coverage that hasn't been expensed yet is a use of cash this month.",
+    why: "Cash paid upfront for software and insurance coverage that hasn't been expensed yet is a use of cash this month — reverses to a source of cash as the prepaid balance amortizes down with no new prepayment.",
     mech: 'Working capital change — use of cash',
-    targets: [{id:'bs-prepaid', role:'bad', reason:'reflects cash tied up in prepaid coverage'}]
+    targets: [
+      {id:'bs-prepaid', role:'bad', cond:'in the month of the upfront payment', reason:'reflects cash tied up in prepaid coverage'},
+      {id:'bs-prepaid', role:'good', cond:'in months with no new prepayment, as the balance simply amortizes down', reason:'a shrinking prepaid balance (with no new cash out) would source cash instead'},
+    ]
   },
   'cf-ar': {
-    why: "A rising AR balance means revenue was recognized but not yet collected, so it gets subtracted here. It's $0 this month since the contract was paid upfront.",
-    mech: 'Working capital change — use of cash',
-    targets: [{id:'bs-ar', role:'bad', reason:'an increase here would directly reduce operating cash'}]
+    why: "A rising AR balance means revenue was recognized but not yet collected, so it gets subtracted here. It's $0 this month since the contract was paid upfront — but this is one of the most-watched lines in any cash flow review.",
+    mech: 'Working capital change — use or source of cash',
+    targets: [
+      {id:'bs-ar', role:'bad', cond:'if AR increases (slower customer collections)', reason:'an increase here would directly reduce operating cash'},
+      {id:'bs-ar', role:'good', cond:'if AR decreases (collections catch up)', reason:'collecting on old invoices would be a source of cash'},
+    ]
   },
   'cf-cfo': {
-    why: "Sums Net Income plus all non-cash add-backs and working capital changes above — the cash actually generated by the core business this month.",
+    why: "Sums Net Income plus all non-cash add-backs and working capital changes above — the cash actually generated by the core business this month. As a subtotal, it inherits the links of everything that rolls into it.",
     mech: 'Operating subtotal',
     targets: []
   },
   'cf-capex': {
-    why: "Cash spent on equipment or capitalized software builds up PP&E on the balance sheet. None this month.",
+    why: "Cash spent on equipment or capitalized software builds up PP&E on the balance sheet. None this month, but any future capex would flow here. Investing activities like this never touch the P&L directly — only later, as the capitalized asset depreciates or amortizes.",
     mech: 'Investing outflow',
-    targets: [{id:'bs-ppe', role:'good', reason:'new capex would build this asset back up'}]
+    targets: [{id:'bs-ppe', role:'good', cond:'whenever capex is spent', reason:'new capex would build this asset back up'}]
   },
-  'cf-cfi': {why: "Sum of all investing activities — capex, capitalized software, M&A. Zero this month.", mech:'Investing subtotal', targets:[]},
+  'cf-cfi': {
+    why: "Sum of all investing activities — capex, capitalized software, M&A. Zero this month, but inherits the links of capex if any occurs.",
+    mech:'Investing subtotal',
+    targets:[]
+  },
   'cf-debt': {
-    why: "Drawing or repaying debt principal is a financing activity that directly moves the Venture Debt balance. None this month.",
+    why: "Drawing or repaying debt principal is a financing activity that directly moves the Venture Debt balance. None this month, but either direction is possible. Like all financing activities, the principal movement itself never touches the P&L directly — only the resulting interest expense does.",
     mech: 'Financing activity',
-    targets: [{id:'bs-debt', role:'good', reason:'a draw would increase this balance'}]
+    targets: [
+      {id:'bs-debt', role:'good', cond:'if the company draws on the facility', reason:'a draw would increase this balance'},
+      {id:'bs-debt', role:'bad', cond:'if the company repays principal', reason:'a repayment would decrease this balance and use cash'},
+    ]
   },
   'cf-equity': {
-    why: "Cash raised from investors increases Paid-in Capital on the balance sheet. None this month.",
+    why: "Cash raised from investors increases Paid-in Capital on the balance sheet. None this month, but any future raise would flow here. Equity raises never touch the P&L at all — they're a pure balance sheet and cash flow event.",
     mech: 'Financing activity',
-    targets: [{id:'bs-apic', role:'good', reason:'a raise would increase this balance'}]
+    targets: [{id:'bs-apic', role:'good', cond:'whenever new equity is raised', reason:'a raise would increase this balance'}]
   },
-  'cf-cff': {why: "Sum of all financing activities — debt and equity movements. Zero this month.", mech:'Financing subtotal', targets:[]},
+  'cf-cff': {
+    why: "Sum of all financing activities — debt and equity movements. Zero this month, but inherits the links of debt/equity activity if any occurs.",
+    mech:'Financing subtotal',
+    targets:[]
+  },
   'cf-net': {
-    why: "CFO + CFI + CFF = the Net Change in Cash, added to beginning cash to produce the ending balance — which must tie exactly to the balance sheet.",
+    why: "CFO + CFI + CFF = the Net Change in Cash, added to beginning cash to produce the ending balance — which must tie exactly to the balance sheet, with no exceptions.",
     mech: 'Statement tie-out',
-    targets: [{id:'bs-cash', role:'good', reason:'hands off the $109,750 increase to become the new Cash balance'}]
+    targets: [{id:'bs-cash', role:'good', cond:'always', reason:'hands off the $109,750 increase to become the new Cash balance'}]
   },
 
-  'pl-gp': {why: "Revenue minus COGS (hosting + customer success/support) — profitability of the core subscription business before operating costs.", mech:'P&L subtotal', targets:[]},
-  'bs-ta': {why: "Sum of all asset accounts: Cash, AR, Deferred Commissions, Prepaids, and PP&E.", mech:'Balance sheet subtotal', targets:[]},
-  'bs-tl': {why: "Sum of all liability accounts: AP, Accrued Payroll, Deferred Revenue, and Venture Debt.", mech:'Balance sheet subtotal', targets:[]},
-  'bs-te': {why: "Sum of all equity accounts. Total Liabilities + Total Equity must equal Total Assets.", mech:'Balance sheet subtotal', targets:[]},
+  'pl-gp': {why: "Revenue minus COGS (hosting + customer success/support) — profitability of the core subscription business before operating costs. As a subtotal, it inherits the links of Revenue and COGS rather than creating new ones.", mech:'P&L subtotal', targets:[]},
 };
 
-// Adjacency for highlighting: ONLY the explicit forward targets of the hovered line.
+// Adjacency for highlighting: unique set of target ids per source line (dedup across multiple conditions).
 const adjacency = {};
 Object.entries(connections).forEach(([from,data])=>{
   adjacency[from] = new Set((data.targets||[]).map(t=>t.id));
@@ -790,8 +881,16 @@ let pinned = null;
 
 function highlight(id, isPinned){
   const data = connections[id] || {targets:[]};
+  // Build role map; if a target has both good and bad conditions, mark as 'mixed'
+  const roleSets = {};
+  (data.targets||[]).forEach(t=>{
+    if(!roleSets[t.id]) roleSets[t.id] = new Set();
+    roleSets[t.id].add(t.role);
+  });
   const roleById = {};
-  (data.targets||[]).forEach(t=> roleById[t.id] = t.role);
+  Object.entries(roleSets).forEach(([tid, set])=>{
+    roleById[tid] = set.size > 1 ? 'mixed' : Array.from(set)[0];
+  });
   const activeSet = new Set([id, ...Object.keys(roleById)]);
 
   document.querySelectorAll('.line').forEach(row=>{
@@ -808,8 +907,13 @@ function highlight(id, isPinned){
         row.style.setProperty('--row-tint', `var(${tintVar[stKey]})`);
       } else {
         const role = roleById[rid];
-        row.style.setProperty('--row-accent', role==='good' ? 'var(--good)' : 'var(--bad)');
-        row.style.setProperty('--row-tint', role==='good' ? 'var(--good-bg)' : 'var(--bad-bg)');
+        if(role === 'mixed'){
+          row.style.setProperty('--row-accent', 'var(--violet)');
+          row.style.setProperty('--row-tint', 'var(--bs-tint)');
+        } else {
+          row.style.setProperty('--row-accent', role==='good' ? 'var(--good)' : 'var(--bad)');
+          row.style.setProperty('--row-tint', role==='good' ? 'var(--good-bg)' : 'var(--bad-bg)');
+        }
       }
     } else if(row.classList.contains('linkable') || row.classList.contains('subtotal')){
       row.classList.add('dim');
@@ -854,8 +958,15 @@ function drawLinks(fromId){
   if(!fromEl) return;
   const fromRect = fromEl.getBoundingClientRect();
 
+  // Dedup targets: one line per unique destination id, role = mixed if both good and bad present
+  const roleSets = {};
   data.targets.forEach(t=>{
-    const toEl = document.getElementById('row-'+t.id);
+    if(!roleSets[t.id]) roleSets[t.id] = new Set();
+    roleSets[t.id].add(t.role);
+  });
+
+  Object.entries(roleSets).forEach(([toId, roleSet])=>{
+    const toEl = document.getElementById('row-'+toId);
     if(!toEl) return;
     const toRect = toEl.getBoundingClientRect();
 
@@ -873,7 +984,8 @@ function drawLinks(fromId){
     const path = document.createElementNS('http://www.w3.org/2000/svg','path');
     const d = `M ${x1} ${y1} C ${x1 + (x2>x1?dx:-dx)} ${y1}, ${x2 - (x2>x1?dx:-dx)} ${y2}, ${x2} ${y2}`;
     path.setAttribute('d', d);
-    path.setAttribute('class', 'linkpath ' + (t.role === 'good' ? 'good' : 'bad'));
+    const roleClass = roleSet.size > 1 ? 'mixed' : (Array.from(roleSet)[0]==='good' ? 'good' : 'bad');
+    path.setAttribute('class', 'linkpath ' + roleClass);
     svg.appendChild(path);
     requestAnimationFrame(()=>path.classList.add('show'));
   });
@@ -895,9 +1007,10 @@ function showDetail(id, isPinned){
   const calloutsHtml = (data.targets||[]).map(t=>{
     const tline = lines.find(l=>l.id===t.id);
     const badgeText = t.role === 'good' ? 'GOOD GUY TO' : 'BAD GUY TO';
+    const condHtml = t.cond ? `<span class="cond-tag">${t.cond}</span>` : '';
     return `<div class="callout ${t.role}">
       <span class="callout-badge">${badgeText}</span>
-      <span class="callout-text"><span class="target">${stMeta[tline.st].label} · ${tline.name}</span> — ${t.reason}</span>
+      <span class="callout-text"><span class="target">${stMeta[tline.st].label} · ${tline.name}</span> — ${t.reason}${condHtml}</span>
     </div>`;
   }).join('');
 

@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Executive Summary Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root {
+    --navy:   #0A2540;
+    --blue:   #0047D8;
+    --blue2:  #3a6fd8;
+    --teal:   #20b2aa;
+    --mint:   #8ee9d3;
+    --lav:    #edf0f8;
+    --white:  #ffffff;
+    --border: #dde2ef;
+    --sub:    #4a5a72;
+    --muted:  #8fa3bb;
+    --red:    #c92a2a;
+    --green:  #2b8a3e;
+    --amber:  #e67700;
+    --bg:     #f4f6fb;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--navy);
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  /* NAV */
+  nav {
+    background: var(--navy);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 36px; height: 50px;
+  }
+  .nav-brand { display: flex; align-items: center; gap: 10px; color: white; font-weight: 800; font-size: 16px; }
+  .nav-icon { width: 26px; height: 26px; background: var(--blue); border-radius: 5px; display: flex; align-items: center; justify-content: center; color: white; font-size: 12px; font-weight: 800; }
+  .nav-right { display: flex; align-items: center; gap: 20px; }
+  .nav-tag { font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: rgba(255,255,255,.4); }
+  .nav-date { font-size: 11px; color: rgba(255,255,255,.3); }
+
+  /* PAGE */
+  .page { max-width: 1160px; margin: 0 auto; padding: 28px 36px 72px; }
+
+  /* PAGE HEADER */
+  .page-hdr { display: flex; align-items: flex-end; justify-content: space-between; padding-bottom: 18px; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
+  .page-hdr h1 { font-size: 21px; font-weight: 800; color: var(--navy); margin-bottom: 3px; }
+  .page-hdr p { font-size: 12px; color: var(--muted); }
+  .page-hdr-note { font-size: 11px; color: var(--muted); text-align: right; line-height: 1.8; }
+  .page-hdr-note strong { color: var(--sub); }
+
+  /* KPI STRIP */
+  .kpi-strip {
+    display: grid; grid-template-columns: repeat(6, 1fr);
+    gap: 1px; background: var(--border);
+    border: 1px solid var(--border); border-radius: 10px; overflow: hidden; margin-bottom: 28px;
+  }
+  .kpi { background: var(--white); padding: 14px 16px; }
+  .kpi-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); margin-bottom: 5px; }
+  .kpi-val { font-size: 19px; font-weight: 800; color: var(--navy); line-height: 1; }
+  .kpi-sub { font-size: 11px; margin-top: 3px; color: var(--muted); }
+  .kpi-sub.up { color: var(--green); }
+  .kpi-sub.dn { color: var(--red); }
+
+  /* SECTION LABEL */
+  .sec-label { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .1em; color: var(--blue); margin: 26px 0 10px; }
+
+  /* CARD */
+  .card { background: var(--white); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  .card-hdr { padding: 10px 16px; border-bottom: 1px solid var(--border); background: #fafbfd; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .07em; color: var(--sub); }
+
+  /* LAYOUT */
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .row-6040 { display: grid; grid-template-columns: 1.5fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .row-4060 { display: grid; grid-template-columns: 1fr 1.5fr; gap: 16px; margin-bottom: 16px; }
+  .mb16 { margin-bottom: 16px; }
+
+  /* CHART WRAPPER */
+  .chart-box { padding: 16px 18px; position: relative; }
+  .chart-box canvas { display: block; }
+
+  /* TABLE */
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); padding: 7px 14px; text-align: left; border-bottom: 1px solid var(--border); background: #fafbfd; }
+  td { padding: 8px 14px; border-bottom: 1px solid var(--border); color: var(--navy); }
+  tr:last-child td { border-bottom: none; }
+  .r { text-align: right; font-variant-numeric: tabular-nums; }
+  tr.bold td { font-weight: 800; }
+  tr.hl td { background: #f4f7ff; }
+  tr.dim td { color: var(--sub); }
+  td.pos { color: var(--green); font-weight: 700; }
+  td.neg { color: var(--red); font-weight: 700; }
+  td.blu { color: var(--blue); font-weight: 700; }
+
+  /* CALLOUT */
+  .callout { background: #f3f6ff; border-left: 3px solid var(--blue); padding: 10px 14px; font-size: 12px; color: var(--sub); line-height: 1.6; }
+  .callout strong { color: var(--navy); }
+
+  /* METRIC LIST */
+  .mrow { display: flex; justify-content: space-between; align-items: baseline; padding: 8px 16px; border-bottom: 1px solid var(--border); }
+  .mrow:last-child { border-bottom: none; }
+  .mrow-label { font-size: 12px; color: var(--sub); }
+  .mrow-val { font-size: 13px; font-weight: 700; color: var(--navy); }
+
+  /* BREAKEVEN TRACK */
+  .be-track { height: 8px; border-radius: 5px; background: linear-gradient(to right, #ffd8d8 0%, #fff0cc 43%, #d4f5e4 60%, #b2edcf 100%); margin: 12px 0 0; }
+  .be-pins { position: relative; height: 48px; }
+  .be-pin { position: absolute; transform: translateX(-50%); top: 0; display: flex; flex-direction: column; align-items: center; gap: 3px; }
+  .be-dot { width: 10px; height: 10px; border-radius: 50%; border: 2px solid white; box-shadow: 0 1px 4px rgba(0,0,0,.2); }
+  .be-lbl { font-size: 10px; font-weight: 700; text-align: center; line-height: 1.3; white-space: nowrap; }
+  .be-axis { display: flex; justify-content: space-between; font-size: 10px; color: var(--muted); margin-top: 2px; }
+
+  /* FOOTER */
+  footer { background: var(--navy); color: rgba(255,255,255,.4); text-align: center; padding: 14px; font-size: 11px; }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-brand">
+    <div class="nav-icon">FP</div>
+    Executive Dashboard
+  </div>
+  <div class="nav-right">
+    <span class="nav-tag">SaaS Finance · Executive Summary</span>
+    <span class="nav-date">All figures $000s · 2023–2027</span>
+  </div>
+</nav>
+
+<div class="page">
+
+  <!-- PAGE HEADER -->
+  <div class="page-hdr">
+    <div>
+      <h1>Executive Summary Dashboard</h1>
+      <p>ARR Performance &amp; Retention · Segment Analysis · Three-Year Financial Model &amp; Scenario Analysis</p>
+    </div>
+    <div class="page-hdr-note">
+      <strong>Actuals:</strong> 2023 · 2024 · 2025 &nbsp;|&nbsp; <strong>Forecast:</strong> 2026F · 2027F<br>
+      Revenue CAGR +22% · GM 85% · OpEx +18%/yr
+    </div>
+  </div>
+
+  <!-- KPI STRIP -->
+  <div class="kpi-strip">
+    <div class="kpi">
+      <div class="kpi-label">2025 Ending ARR</div>
+      <div class="kpi-val">$27,048k</div>
+      <div class="kpi-sub up">+28.9% vs 2024</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">2025 NRR</div>
+      <div class="kpi-val">127.6%</div>
+      <div class="kpi-sub dn">GRR 76.8% (↓ 330bps)</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">2025 Gross Margin</div>
+      <div class="kpi-val">85.0%</div>
+      <div class="kpi-sub">Stable 3 yrs</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">2025 Net Income</div>
+      <div class="kpi-val">$3,702k</div>
+      <div class="kpi-sub up">13.7% net margin</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">2027F Revenue</div>
+      <div class="kpi-val">$40,258k</div>
+      <div class="kpi-sub up">+22%/yr · base case</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">2027F OCF</div>
+      <div class="kpi-val">$7,557k</div>
+      <div class="kpi-sub up">2.3× 2025A level</div>
+    </div>
+  </div>
+
+
+  <!-- ══ ARR PERFORMANCE ══ -->
+  <div class="sec-label">ARR Performance &amp; Retention</div>
+
+  <!-- Row: ARR Chart + Retention Chart -->
+  <div class="row2 mb16">
+
+    <!-- ARR Waterfall Chart -->
+    <div class="card">
+      <div class="card-hdr">ARR Build by Component ($000s)</div>
+      <div class="chart-box" style="height:260px">
+        <canvas id="arrWaterfallChart"></canvas>
+      </div>
+      <div class="callout">
+        2024–25 growth is <strong>entirely expansion-led</strong> — new logo ARR near zero. 2025 ending ARR of <strong>$27,048k equals recognised revenue</strong> under ASC 606 straight-line.
+      </div>
+    </div>
+
+    <!-- Retention Chart -->
+    <div class="card">
+      <div class="card-hdr">Gross &amp; Net Revenue Retention (%)</div>
+      <div class="chart-box" style="height:200px">
+        <canvas id="retentionChart"></canvas>
+      </div>
+      <div style="border-top:1px solid var(--border)">
+        <table>
+          <thead><tr><th>Metric</th><th class="r">2024A</th><th class="r">2025A</th><th class="r">Δ</th></tr></thead>
+          <tbody>
+            <tr><td>Churn Rate</td><td class="r">19.9%</td><td class="r">23.2%</td><td class="r neg">+330 bps</td></tr>
+            <tr><td>Expansion Rate</td><td class="r">48.3%</td><td class="r">50.7%</td><td class="r pos">+240 bps</td></tr>
+            <tr><td>Churned ARR</td><td class="r">($3,240)</td><td class="r">($4,860)</td><td class="r neg">+50%</td></tr>
+            <tr><td>Expansion ARR</td><td class="r">$7,872</td><td class="r">$10,644</td><td class="r pos">+35%</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="callout">
+        NRR above 127% confirms a strong <strong>land-and-expand motion</strong>. GRR declining to 76.8% and churn accelerating to 23% warrant attention — expansion currently masks the trend.
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ══ SEGMENTS & ACV ══ -->
+  <div class="sec-label">Segment Performance &amp; Contract Value</div>
+
+  <div class="row-6040 mb16">
+
+    <!-- Segment Chart -->
+    <div class="card">
+      <div class="card-hdr">ARR by Segment — 2023 · 2024 · 2025 ($000s)</div>
+      <div class="chart-box" style="height:280px">
+        <canvas id="segmentChart"></canvas>
+      </div>
+      <div class="callout">
+        <strong>Startup</strong> is the fastest-growing segment (+117% over 2023–25). Enterprise mix compressed from 34.8% → 28.0% of total ARR despite absolute growth.
+      </div>
+    </div>
+
+    <!-- ACV Table -->
+    <div class="card" style="display:flex;flex-direction:column">
+      <div class="card-hdr">Contract Value by Plan Tier</div>
+      <table>
+        <thead><tr><th>Plan Tier</th><th class="r">Annual ACV</th><th class="r">Monthly</th></tr></thead>
+        <tbody>
+          <tr><td>Starter</td><td class="r">$48,000</td><td class="r">$4,000</td></tr>
+          <tr><td>Professional</td><td class="r">$96,000</td><td class="r">$8,000</td></tr>
+          <tr class="bold hl"><td>Enterprise</td><td class="r">$180,000</td><td class="r">$15,000</td></tr>
+        </tbody>
+      </table>
+      <div style="border-top:1px solid var(--border);padding:10px 16px;background:#fafbfd;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:var(--sub)">New Logo ARR by Tier ($000s)</div>
+      <table>
+        <thead><tr><th>Tier</th><th class="r">2023A</th><th class="r">2024A</th><th class="r">2025A</th></tr></thead>
+        <tbody>
+          <tr><td>Starter</td><td class="r">$1,824</td><td class="r">$48</td><td class="r" style="color:var(--muted)">—</td></tr>
+          <tr><td>Professional</td><td class="r">$3,936</td><td class="r" style="color:var(--muted)">—</td><td class="r">$96</td></tr>
+          <tr><td>Enterprise</td><td class="r">$5,400</td><td class="r" style="color:var(--muted)">—</td><td class="r">$180</td></tr>
+          <tr class="dim"><td>Blended avg ACV</td><td class="r">$102k</td><td class="r">$48k</td><td class="r">$138k</td></tr>
+        </tbody>
+      </table>
+      <div class="callout" style="margin-top:auto">
+        Since 2024, <strong>new logo activity is near zero</strong>. All ARR growth comes from upsell within existing accounts. Rising blended ACV reflects Enterprise-heavy expansion.
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ══ FINANCIAL MODEL ══ -->
+  <div class="sec-label">Three-Year Financial Model</div>
+
+  <!-- Revenue / GP / OCF Chart – full width -->
+  <div class="card mb16">
+    <div class="card-hdr">Revenue · Gross Profit · Net Income · Operating Cash Flow ($000s)</div>
+    <div class="chart-box" style="height:280px">
+      <canvas id="financialChart"></canvas>
+    </div>
+  </div>
+
+  <!-- Compact P&L Table -->
+  <div class="card mb16">
+    <div class="card-hdr">Income Statement Detail ($000s)</div>
+    <table>
+      <thead>
+        <tr>
+          <th style="width:200px">Line Item</th>
+          <th class="r">2025A</th>
+          <th class="r">2026F</th>
+          <th class="r">YoY</th>
+          <th class="r">2027F</th>
+          <th class="r">YoY</th>
+          <th class="r">2025→2027</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="bold hl"><td>Revenue</td><td class="r">$27,048</td><td class="r">$32,999</td><td class="r pos">+22.0%</td><td class="r">$40,258</td><td class="r pos">+22.0%</td><td class="r pos">+48.8%</td></tr>
+        <tr class="dim"><td>&nbsp;&nbsp;Cost of Revenue</td><td class="r">$4,057</td><td class="r">$4,950</td><td class="r"></td><td class="r">$6,039</td><td class="r"></td><td class="r"></td></tr>
+        <tr class="bold"><td>Gross Profit</td><td class="r">$22,991</td><td class="r">$28,049</td><td class="r pos">+22.0%</td><td class="r">$34,220</td><td class="r pos">+22.0%</td><td class="r"></td></tr>
+        <tr class="dim"><td>&nbsp;&nbsp;Gross Margin %</td><td class="r">85.0%</td><td class="r">85.0%</td><td class="r"></td><td class="r">85.0%</td><td class="r"></td><td class="r"></td></tr>
+        <tr class="dim"><td>Total OpEx</td><td class="r">$16,500</td><td class="r">$19,470</td><td class="r" style="color:var(--sub)">+18.0%</td><td class="r">$22,975</td><td class="r" style="color:var(--sub)">+18.0%</td><td class="r"></td></tr>
+        <tr class="bold hl"><td>EBITDA</td><td class="r">$6,491</td><td class="r">$8,579</td><td class="r pos">+32.2%</td><td class="r">$11,245</td><td class="r pos">+31.1%</td><td class="r pos">+73.2%</td></tr>
+        <tr class="dim"><td>&nbsp;&nbsp;Amort / Interest / Tax</td><td class="r">$2,789</td><td class="r">$3,423</td><td class="r"></td><td class="r">$4,181</td><td class="r"></td><td class="r"></td></tr>
+        <tr class="bold"><td>Net Income</td><td class="r">$3,702</td><td class="r">$5,155</td><td class="r pos">+39.3%</td><td class="r">$7,063</td><td class="r pos">+37.0%</td><td class="r pos">+90.8%</td></tr>
+        <tr class="dim"><td>&nbsp;&nbsp;Net Margin %</td><td class="r">13.7%</td><td class="r">15.6%</td><td class="r"></td><td class="r">17.5%</td><td class="r"></td><td class="r"></td></tr>
+        <tr class="bold hl"><td style="color:var(--green)">Cash from Operations</td><td class="r pos">$3,309</td><td class="r pos">$5,560</td><td class="r pos">+68.0%</td><td class="r pos">$7,557</td><td class="r pos">+35.9%</td><td class="r pos">+128%</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+
+  <!-- ══ SCENARIO & OCF ══ -->
+  <div class="sec-label">Scenario Analysis &amp; OCF Breakeven</div>
+
+  <div class="row2 mb16">
+
+    <!-- Scenario Chart -->
+    <div class="card">
+      <div class="card-hdr">2027 Net Income: 22% vs 15% Revenue Growth</div>
+      <div class="chart-box" style="height:240px">
+        <canvas id="scenarioChart"></canvas>
+      </div>
+      <div style="border-top:1px solid var(--border)">
+        <table>
+          <thead><tr><th>Metric (2027F)</th><th class="r">Base 22%</th><th class="r">Downside 15%</th><th class="r">Δ</th></tr></thead>
+          <tbody>
+            <tr><td>Revenue</td><td class="r">$40,258k</td><td class="r">$35,771k</td><td class="r neg">−$4,487k</td></tr>
+            <tr><td>Gross Profit</td><td class="r">$34,220k</td><td class="r">$30,406k</td><td class="r neg">−$3,814k</td></tr>
+            <tr><td>Total OpEx</td><td class="r">$22,975k</td><td class="r">$22,975k</td><td class="r" style="color:var(--muted)">unchanged</td></tr>
+            <tr class="bold hl"><td>Net Income</td><td class="r pos">$7,063k</td><td class="r neg">$4,203k</td><td class="r neg">−$2,860k (−40.5%)</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="callout">
+        OpEx grows at 18% regardless of revenue. A <strong>7pp growth miss</strong> drives a <strong>40% NI decline</strong> — high fixed-cost operating leverage.
+      </div>
+    </div>
+
+    <!-- OCF Chart -->
+    <div class="card">
+      <div class="card-hdr">OCF Trajectory &amp; Breakeven ($000s)</div>
+      <div class="chart-box" style="height:220px">
+        <canvas id="ocfChart"></canvas>
+      </div>
+      <div style="border-top:1px solid var(--border)">
+        <div class="mrow"><div class="mrow-label">OCF breakeven revenue</div><div class="mrow-val" style="color:var(--blue)">~$19,500k</div></div>
+        <div class="mrow"><div class="mrow-label">Buffer above breakeven (2025A)</div><div class="mrow-val" style="color:var(--green)">+$7,548k</div></div>
+        <div class="mrow"><div class="mrow-label">Formula</div><div class="mrow-val" style="font-size:11px;color:var(--sub);font-weight:500">0.6375R = 0.75×(OpEx+Int) − 0.25×Amort</div></div>
+      </div>
+      <div class="callout">
+        The company crossed OCF breakeven well below current revenue. Under the base case, OCF <strong>more than doubles from $3.3M to $7.6M</strong> by 2027.
+      </div>
+    </div>
+
+  </div>
+
+</div><!-- /page -->
+
+<footer>Executive Summary Dashboard · All figures $000s · Forecast assumes 22% revenue CAGR, 85% GM, 18% OpEx growth</footer>
+
+<script>
+/* ── CHART DEFAULTS ── */
+Chart.defaults.font.family = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif";
+Chart.defaults.font.size = 11;
+Chart.defaults.color = '#4a5a72';
+Chart.defaults.plugins.legend.labels.boxWidth = 12;
+Chart.defaults.plugins.legend.labels.padding = 16;
+
+const BLUE   = '#0047D8';
+const BLUE2  = '#4a7fe8';
+const NAVY   = '#0A2540';
+const TEAL   = '#20b2aa';
+const MINT   = '#5ecfbc';
+const GREEN  = '#2b8a3e';
+const RED    = '#c92a2a';
+const AMBER  = '#e67700';
+const GRAY   = '#b0bfcf';
+const LGRAY  = '#dde2ef';
+
+function gridOpts(color = '#e8ecf4') {
+  return { color, drawBorder: false };
+}
+function tickOpts() {
+  return { color: '#8fa3bb' };
+}
+
+/* ══ CHART 1: ARR WATERFALL ══ */
+new Chart(document.getElementById('arrWaterfallChart'), {
+  type: 'bar',
+  data: {
+    labels: ['2023A', '2024A', '2025A'],
+    datasets: [
+      {
+        label: '+ New Logo',
+        data: [11160, 48, 276],
+        backgroundColor: '#40c057cc',
+        borderColor: '#40c057',
+        borderWidth: 1,
+        borderRadius: 3,
+        stack: 'build'
+      },
+      {
+        label: '+ Expansion',
+        data: [5148, 7872, 10644],
+        backgroundColor: BLUE + 'cc',
+        borderColor: BLUE,
+        borderWidth: 1,
+        borderRadius: 3,
+        stack: 'build'
+      },
+      {
+        label: '− Churn',
+        data: [0, -3240, -4860],
+        backgroundColor: RED + 'bb',
+        borderColor: RED,
+        borderWidth: 1,
+        borderRadius: 3,
+        stack: 'build'
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { position: 'top' },
+      tooltip: {
+        callbacks: {
+          label: ctx => {
+            const v = ctx.parsed.y;
+            return ` ${ctx.dataset.label}: $${Math.abs(v).toLocaleString()}k`;
+          }
+        }
+      }
+    },
+    scales: {
+      x: { stacked: true, grid: { display: false }, ticks: tickOpts() },
+      y: {
+        stacked: true,
+        grid: gridOpts(),
+        ticks: {
+          ...tickOpts(),
+          callback: v => '$' + (v/1000).toFixed(0) + 'M'
+        },
+        title: { display: false }
+      }
+    }
+  }
+});
+
+/* ══ CHART 2: RETENTION ══ */
+new Chart(document.getElementById('retentionChart'), {
+  type: 'bar',
+  data: {
+    labels: ['2024A', '2025A'],
+    datasets: [
+      {
+        label: 'GRR %',
+        data: [80.1, 76.8],
+        backgroundColor: TEAL + 'cc',
+        borderColor: TEAL,
+        borderWidth: 1,
+        borderRadius: 4,
+        barPercentage: 0.55
+      },
+      {
+        label: 'NRR %',
+        data: [128.4, 127.6],
+        backgroundColor: BLUE + 'cc',
+        borderColor: BLUE,
+        borderWidth: 1,
+        borderRadius: 4,
+        barPercentage: 0.55
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { position: 'top' },
+      tooltip: {
+        callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y.toFixed(1)}%` }
+      }
+    },
+    scales: {
+      x: { grid: { display: false }, ticks: tickOpts() },
+      y: {
+        grid: gridOpts(),
+        ticks: { ...tickOpts(), callback: v => v + '%' },
+        min: 0,
+        max: 145,
+        suggestedMin: 60,
+        // Draw 100% reference line via annotation-free approach
+      }
+    }
+  },
+  plugins: [{
+    id: 'refLine',
+    afterDraw(chart) {
+      const { ctx, chartArea: { left, right }, scales: { y } } = chart;
+      const yPos = y.getPixelForValue(100);
+      ctx.save();
+      ctx.setLineDash([5, 4]);
+      ctx.strokeStyle = '#8fa3bb';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(left, yPos);
+      ctx.lineTo(right, yPos);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.font = '10px system-ui';
+      ctx.fillStyle = '#8fa3bb';
+      ctx.fillText('100%', right + 4, yPos + 4);
+      ctx.restore();
+    }
+  }]
+});
+
+/* ══ CHART 3: SEGMENTS ══ */
+new Chart(document.getElementById('segmentChart'), {
+  type: 'bar',
+  data: {
+    labels: ['2023A', '2024A', '2025A'],
+    datasets: [
+      {
+        label: 'Startup ★  +117%',
+        data: [3264, 4716, 7068],
+        backgroundColor: BLUE + 'e0',
+        borderColor: BLUE,
+        borderWidth: 1,
+        borderRadius: 3,
+        stack: 's'
+      },
+      {
+        label: 'Growth',
+        data: [6444, 7932, 10872],
+        backgroundColor: TEAL + 'cc',
+        borderColor: TEAL,
+        borderWidth: 1,
+        borderRadius: 3,
+        stack: 's'
+      },
+      {
+        label: 'Enterprise',
+        data: [5676, 7320, 7584],
+        backgroundColor: NAVY + 'cc',
+        borderColor: NAVY,
+        borderWidth: 1,
+        borderRadius: 3,
+        stack: 's'
+      },
+      {
+        label: 'Unassigned',
+        data: [924, 1020, 1524],
+        backgroundColor: GRAY + 'cc',
+        borderColor: GRAY,
+        borderWidth: 1,
+        borderRadius: 3,
+        stack: 's'
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { position: 'top' },
+      tooltip: {
+        callbacks: {
+          label: ctx => ` ${ctx.dataset.label}: $${ctx.parsed.y.toLocaleString()}k`
+        }
+      }
+    },
+    scales: {
+      x: { stacked: true, grid: { display: false }, ticks: tickOpts() },
+      y: {
+        stacked: true,
+        grid: gridOpts(),
+        ticks: { ...tickOpts(), callback: v => '$' + (v/1000).toFixed(0) + 'M' }
+      }
+    }
+  }
+});
+
+/* ══ CHART 4: FINANCIAL 3-YEAR ══ */
+new Chart(document.getElementById('financialChart'), {
+  type: 'bar',
+  data: {
+    labels: ['2025A', '2026F', '2027F'],
+    datasets: [
+      {
+        label: 'Revenue',
+        data: [27048, 32999, 40258],
+        backgroundColor: BLUE + 'cc',
+        borderColor: BLUE,
+        borderWidth: 1,
+        borderRadius: 4,
+        order: 2
+      },
+      {
+        label: 'Gross Profit',
+        data: [22991, 28049, 34220],
+        backgroundColor: TEAL + 'cc',
+        borderColor: TEAL,
+        borderWidth: 1,
+        borderRadius: 4,
+        order: 2
+      },
+      {
+        label: 'Net Income',
+        data: [3702, 5155, 7063],
+        backgroundColor: NAVY + 'cc',
+        borderColor: NAVY,
+        borderWidth: 1,
+        borderRadius: 4,
+        order: 2
+      },
+      {
+        label: 'OCF',
+        data: [3309, 5560, 7557],
+        type: 'line',
+        borderColor: AMBER,
+        backgroundColor: AMBER + '22',
+        pointBackgroundColor: AMBER,
+        pointRadius: 5,
+        pointHoverRadius: 7,
+        borderWidth: 2.5,
+        fill: false,
+        tension: 0.3,
+        order: 1,
+        yAxisID: 'y'
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: { mode: 'index' },
+    plugins: {
+      legend: { position: 'top' },
+      tooltip: {
+        callbacks: {
+          label: ctx => ` ${ctx.dataset.label}: $${ctx.parsed.y.toLocaleString()}k`
+        }
+      }
+    },
+    scales: {
+      x: { grid: { display: false }, ticks: tickOpts() },
+      y: {
+        grid: gridOpts(),
+        ticks: { ...tickOpts(), callback: v => '$' + (v/1000).toFixed(0) + 'M' }
+      }
+    }
+  }
+});
+
+/* ══ CHART 5: SCENARIO ══ */
+new Chart(document.getElementById('scenarioChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Revenue', 'Gross Profit', 'EBITDA', 'Net Income'],
+    datasets: [
+      {
+        label: 'Base: 22% Growth',
+        data: [40258, 34220, 11245, 7063],
+        backgroundColor: BLUE + 'cc',
+        borderColor: BLUE,
+        borderWidth: 1,
+        borderRadius: 4,
+        barPercentage: 0.6
+      },
+      {
+        label: 'Downside: 15% Growth',
+        data: [35771, 30406, 7431, 4203],
+        backgroundColor: RED + 'aa',
+        borderColor: RED,
+        borderWidth: 1,
+        borderRadius: 4,
+        barPercentage: 0.6
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    indexAxis: 'y',
+    plugins: {
+      legend: { position: 'top' },
+      tooltip: {
+        callbacks: {
+          label: ctx => ` ${ctx.dataset.label}: $${ctx.parsed.x.toLocaleString()}k`
+        }
+      }
+    },
+    scales: {
+      x: {
+        grid: gridOpts(),
+        ticks: { ...tickOpts(), callback: v => '$' + (v/1000).toFixed(0) + 'M' }
+      },
+      y: { grid: { display: false }, ticks: { ...tickOpts(), font: { weight: '600' } } }
+    }
+  }
+});
+
+/* ══ CHART 6: OCF TRAJECTORY ══ */
+new Chart(document.getElementById('ocfChart'), {
+  type: 'bar',
+  data: {
+    labels: ['2025A', '2026F', '2027F'],
+    datasets: [
+      {
+        label: 'Operating Cash Flow',
+        data: [3309, 5560, 7557],
+        backgroundColor: [GREEN + 'bb', GREEN + 'cc', GREEN + 'dd'],
+        borderColor: GREEN,
+        borderWidth: 1,
+        borderRadius: 5,
+        barPercentage: 0.5
+      },
+      {
+        label: 'Breakeven Level (~$19.5M rev)',
+        data: [null, null, null],  // legend entry only
+        type: 'line',
+        borderColor: AMBER,
+        borderDash: [5, 4],
+        borderWidth: 1.5,
+        pointRadius: 0,
+        backgroundColor: 'transparent'
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { position: 'top' },
+      tooltip: {
+        callbacks: {
+          label: ctx => ` OCF: $${ctx.parsed.y.toLocaleString()}k`
+        }
+      }
+    },
+    scales: {
+      x: { grid: { display: false }, ticks: tickOpts() },
+      y: {
+        grid: gridOpts(),
+        ticks: { ...tickOpts(), callback: v => '$' + v.toLocaleString() + 'k' },
+        min: 0
+      }
+    }
+  },
+  plugins: [{
+    id: 'breakevenLine',
+    afterDraw(chart) {
+      // Draw a dashed reference line for "if OCF were at breakeven revenue"
+      // We annotate the chart area to show OCF trend clarity
+      const { ctx, chartArea: { left, right, top }, scales: { y } } = chart;
+      // Show a "+128% growth" label
+      ctx.save();
+      ctx.font = '700 11px system-ui';
+      ctx.fillStyle = GREEN;
+      ctx.textAlign = 'right';
+      ctx.fillText('+128% over 2 years', right, top - 4);
+      ctx.restore();
+    }
+  }]
+});
+</script>
+</body>
+</html>

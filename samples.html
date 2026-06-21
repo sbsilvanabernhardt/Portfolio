@@ -688,7 +688,7 @@
   </section>
 
   <!-- ── 02 CROSS FUNCTIONAL BUSINESS PARTNERING ─── -->
-  <section class="s-card" id="business-partnering">
+  <section class="s-card" id="business-partnering" style="display:none">
     <div class="s-card-head">
       <span class="s-num">02</span>
       <h2 class="s-title">Cross Functional Business Partnering</h2>
@@ -810,7 +810,7 @@
   </section>
 
   <!-- ── 03 SAAS FP&A & STRATEGIC FINANCE ─────────── -->
-  <section class="s-card" id="saas-fpa">
+  <section class="s-card" id="saas-fpa" style="display:none">
     <div class="s-card-head">
       <span class="s-num">03</span>
       <h2 class="s-title">SaaS FP&amp;A &amp; Strategic Finance</h2>
@@ -960,22 +960,16 @@
       if (btn) btn.classList.toggle('active', t === id);
     });
 
-    // Reset & re-trigger scroll animations for the visible section
+    // Reveal the active section itself (it IS the s-card)
     const active = document.getElementById(id);
     if (!active) return;
 
-    active.querySelectorAll('.s-card').forEach(card => {
-      card.classList.remove('reveal');
-      card.querySelectorAll('.s-item').forEach(item => item.classList.remove('reveal'));
-    });
-
+    active.classList.remove('reveal');
     requestAnimationFrame(() => {
-      active.querySelectorAll('.s-card').forEach((card, i) => {
-        setTimeout(() => {
-          card.classList.add('reveal');
-          card.querySelectorAll('.s-preview').forEach(p => animateBars(p));
-        }, i * 80);
-      });
+      setTimeout(() => {
+        active.classList.add('reveal');
+        active.querySelectorAll('.s-preview').forEach(p => animateBars(p));
+      }, 40);
     });
 
     window.scrollTo({ top: 0, behavior: 'smooth' });

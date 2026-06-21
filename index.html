@@ -456,7 +456,7 @@
 
     /* Body — fades in only on active card */
     .card-body {
-      flex: 1; overflow: hidden;
+      flex: 1; overflow-y: auto;
       opacity: 0; transform: translateY(12px);
       pointer-events: none;
       transition: opacity .48s var(--ease) .2s,
@@ -469,7 +469,7 @@
 
     /* Body typography — compact to fit everything without scrolling */
     .cb-p {
-      font-size: clamp(.7rem, 1.05vw, .82rem); line-height: 1.6;
+      font-size: clamp(.66rem, .85vw, .76rem); line-height: 1.55;
       color: rgba(0,0,0,.6); margin-bottom: .5rem;
     }
     .cb-p:last-child { margin-bottom: 0; }
@@ -488,7 +488,7 @@
     }
     .cb-list { list-style: none; }
     .cb-list li {
-      font-size: clamp(.66rem, 1vw, .78rem); line-height: 1.45;
+      font-size: clamp(.62rem, .8vw, .72rem); line-height: 1.4;
       color: rgba(0,0,0,.68);
       padding: .13rem 0; border-bottom: 1px solid rgba(0,0,0,.06);
     }

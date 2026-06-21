@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Deferred Revenue Simulator</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --navy:     #0A2540;
+    --blue:     #0047D8;
+    --blue-mid: #1a5ce8;
+    --mint:     #8ee9d3;
+    --lime:     #c7f012;
+    --lavender: #edf0f8;
+    --white:    #ffffff;
+    --border:   #dde2ef;
+    --sub:      #4a5a72;
+    --muted:    #8fa3bb;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif;
+    background: var(--lavender);
+    color: var(--navy);
+    min-height: 100vh;
+  }
+
+  /* ── HEADER BAR ── */
+  .topbar {
+    background: var(--navy);
+    color: #fff;
+    text-align: center;
+    padding: 10px 20px;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.1px;
+  }
+  .topbar em { color: var(--lime); font-style: normal; font-weight: 700; }
+
+  .navbar {
+    background: var(--white);
+    border-bottom: 1px solid var(--border);
+    padding: 0 48px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 64px;
+  }
+  .logo {
+    font-size: 18px; font-weight: 800; color: var(--navy);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .logo-check {
+    width: 26px; height: 26px; background: var(--blue);
+    border-radius: 6px; display: flex; align-items: center; justify-content: center;
+  }
+  .logo-check svg { width: 14px; height: 14px; }
+  .nav-badge {
+    background: var(--blue); color: #fff;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.5px;
+    text-transform: uppercase; padding: 6px 18px; border-radius: 30px;
+  }
+
+  /* ── HERO ── */
+  .hero {
+    text-align: center;
+    padding: 56px 48px 48px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  .hero-eyebrow {
+    font-size: 15px; color: var(--sub); margin-bottom: 12px; font-weight: 400;
+  }
+  .hero h1 {
+    font-size: 42px; font-weight: 900; color: var(--navy);
+    letter-spacing: -1px; line-height: 1.1; margin-bottom: 8px;
+  }
+  .hero h1 em {
+    color: var(--blue); font-style: italic; font-weight: 900;
+  }
+  .hero-sub { font-size: 15px; color: var(--sub); }
+
+  /* ── MAIN CONTENT ── */
+  .content {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 48px 64px;
+  }
+
+  /* ── TOP ROW ── */
+  .top-row {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  .card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 28px 32px;
+    box-shadow: 0 2px 16px rgba(10,37,64,0.06);
+  }
+
+  /* inputs */
+  .inputs { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .acv-display {
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--lavender); border-radius: 10px;
+    padding: 10px 16px; margin-bottom: 24px;
+    border: 1px solid var(--border);
+  }
+  .acv-display .acv-label { font-size: 11px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: var(--muted); }
+  .acv-display .acv-val   { font-size: 20px; font-weight: 900; color: var(--blue); }
+  .acv-display .acv-sub   { font-size: 11px; color: var(--muted); text-align: right; }
+  .field label {
+    display: block; font-size: 11px; font-weight: 700; letter-spacing: 0.6px;
+    text-transform: uppercase; color: var(--muted); margin-bottom: 7px;
+  }
+  .field input, .field select {
+    width: 100%; padding: 11px 14px;
+    border: 1.5px solid var(--border); border-radius: 10px;
+    font-size: 15px; font-family: inherit;
+    background: var(--lavender); color: var(--navy);
+    transition: border-color 0.15s, box-shadow 0.15s;
+    -webkit-appearance: none; appearance: none;
+  }
+  .field input:focus, .field select:focus {
+    outline: none; border-color: var(--blue);
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(0,71,216,0.12);
+  }
+  .divider { height: 1px; background: var(--border); margin: 4px 0 22px; }
+
+  /* slider */
+  .slider-wrap label {
+    display: flex; justify-content: space-between; align-items: baseline;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.6px;
+    text-transform: uppercase; color: var(--muted); margin-bottom: 12px;
+  }
+  .val-label { font-size: 15px; font-weight: 800; color: var(--blue); text-transform: none; letter-spacing: 0; }
+  input[type=range] {
+    width: 100%; height: 5px;
+    -webkit-appearance: none; appearance: none;
+    background: var(--border); border-radius: 4px; cursor: pointer; outline: none;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 22px; height: 22px; border-radius: 50%;
+    background: var(--blue); border: 3px solid #fff;
+    box-shadow: 0 0 0 3px rgba(0,71,216,0.2), 0 2px 8px rgba(0,71,216,0.3);
+    cursor: pointer; transition: box-shadow 0.15s;
+  }
+  input[type=range]:hover::-webkit-slider-thumb {
+    box-shadow: 0 0 0 5px rgba(0,71,216,0.15), 0 2px 8px rgba(0,71,216,0.3);
+  }
+
+  /* ── RPO CARD (blue accent) ── */
+  .rpo-card {
+    background: var(--blue);
+    border-radius: 20px;
+    padding: 28px 24px;
+    box-shadow: 0 4px 20px rgba(0,71,216,0.3);
+    display: flex; flex-direction: column; justify-content: space-between;
+    color: #fff;
+  }
+  .rpo-eyebrow {
+    font-size: 10px; font-weight: 800; letter-spacing: 1px;
+    text-transform: uppercase; color: var(--mint); margin-bottom: 4px;
+  }
+  .rpo-footnote { font-size: 11px; color: rgba(255,255,255,0.6); margin-bottom: 20px; }
+  .rpo-val { font-size: 48px; font-weight: 900; line-height: 1; letter-spacing: -1px; margin-bottom: 4px; }
+  .rpo-of  { font-size: 12px; color: rgba(255,255,255,0.6); margin-bottom: 18px; }
+  .rpo-bar-wrap { background: rgba(255,255,255,0.2); border-radius: 6px; height: 6px; overflow: hidden; margin-bottom: 18px; }
+  .rpo-bar-fill { height: 100%; background: var(--mint); border-radius: 6px; transition: width 0.35s ease; }
+  .rpo-pills { display: flex; flex-direction: column; gap: 8px; }
+  .rpo-pill {
+    display: flex; align-items: center; justify-content: space-between;
+    background: rgba(255,255,255,0.12);
+    border-radius: 10px; padding: 8px 12px; font-size: 12px;
+  }
+  .rpo-pill-left { display: flex; align-items: center; gap: 7px; color: rgba(255,255,255,0.75); }
+  .p-dot { width: 7px; height: 7px; border-radius: 50%; }
+  .rpo-pill.rec .p-dot { background: #fff; }
+  .rpo-pill.rem .p-dot { background: var(--mint); }
+  .p-val { font-weight: 800; color: #fff; }
+
+  /* ── STATEMENTS ── */
+  .statements-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  .stmt-box {
+    background: var(--white);
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    box-shadow: 0 2px 16px rgba(10,37,64,0.06);
+    overflow: hidden;
+  }
+  .stmt-header {
+    padding: 16px 24px 14px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 9px;
+  }
+  .stmt-icon {
+    width: 32px; height: 32px; border-radius: 9px;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .stmt-box.pl .stmt-icon { background: #e8efff; }
+  .stmt-box.bs .stmt-icon { background: #d4f4ee; }
+  .stmt-box.cf .stmt-icon { background: #fef3c7; }
+  .stmt-icon svg { width: 16px; height: 16px; }
+  .stmt-box.pl .stmt-icon svg { stroke: var(--blue); }
+  .stmt-box.bs .stmt-icon svg { stroke: #027d76; }
+  .stmt-box.cf .stmt-icon svg { stroke: #92400e; }
+  .stmt-name {
+    font-size: 12px; font-weight: 800; letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  .stmt-box.pl .stmt-name { color: var(--blue); }
+  .stmt-box.bs .stmt-name { color: #027d76; }
+  .stmt-box.cf .stmt-name { color: #92400e; }
+
+  .stmt-body { padding: 20px 24px; }
+  .srow {
+    display: flex; justify-content: space-between; align-items: baseline;
+    padding: 8px 0; border-bottom: 1px solid #f1f4f9; font-size: 13px;
+  }
+  .srow:last-child { border-bottom: none; padding-bottom: 0; }
+  .srow .lbl { color: var(--sub); }
+  .srow .val { font-weight: 700; font-variant-numeric: tabular-nums; color: var(--navy); }
+
+  .stmt-footer {
+    padding: 16px 24px;
+    border-top: 1px solid var(--border);
+  }
+  .stmt-footer .foot-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); margin-bottom: 4px; }
+  .stmt-footer .foot-val { font-size: 32px; font-weight: 900; letter-spacing: -0.5px; line-height: 1; }
+  .stmt-box.pl .foot-val { color: var(--blue); }
+  .stmt-box.bs .foot-val { color: #027d76; }
+  .stmt-box.cf .foot-val { color: #92400e; }
+
+  /* ── NOTE ── */
+  .note {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--blue);
+    border-radius: 14px;
+    padding: 16px 22px;
+    font-size: 13.5px; color: var(--sub); line-height: 1.65;
+    margin-bottom: 40px;
+    box-shadow: 0 1px 8px rgba(10,37,64,0.04);
+  }
+  .note strong { color: var(--navy); }
+
+  /* ── ASSUMPTIONS (subtle) ── */
+  .assumptions {
+    border-top: 1px solid var(--border);
+    padding-top: 28px;
+  }
+  .assump-heading {
+    font-size: 11px; font-weight: 700; letter-spacing: 0.6px;
+    text-transform: uppercase; color: var(--muted); margin-bottom: 16px;
+  }
+  .assump-list {
+    display: grid; grid-template-columns: 1fr 1fr 1fr;
+    gap: 6px 40px; counter-reset: item; list-style: none;
+  }
+  .assump-list li {
+    font-size: 11.5px; color: #a0b0c4; line-height: 1.55;
+    padding-left: 18px; position: relative; counter-increment: item;
+  }
+  .assump-list li::before {
+    content: counter(item) ".";
+    position: absolute; left: 0;
+    font-weight: 600; color: #c8d5e5;
+  }
+  .assump-list li b { font-weight: 600; color: #8fa3bb; }
+
+  /* ── BLUE FOOTER STRIPE ── */
+  .footer-stripe {
+    background: var(--blue);
+    margin-top: 48px;
+    padding: 40px 48px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .footer-stripe h2 {
+    font-size: 24px; font-weight: 900; color: #fff; letter-spacing: -0.3px;
+  }
+  .footer-stripe h2 em { color: var(--mint); font-style: italic; }
+  .footer-stripe p { font-size: 13px; color: rgba(255,255,255,0.65); margin-top: 4px; }
+
+  @media (max-width: 960px) {
+    .top-row { grid-template-columns: 1fr; }
+    .statements-row { grid-template-columns: 1fr; }
+    .assump-list { grid-template-columns: 1fr 1fr; }
+    .content, .hero, .navbar, .footer-stripe { padding-left: 24px; padding-right: 24px; }
+  }
+  @media (max-width: 600px) {
+    .inputs { grid-template-columns: 1fr 1fr; }
+    .assump-list { grid-template-columns: 1fr; }
+    .hero h1 { font-size: 28px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- nav -->
+<div class="navbar">
+  <div class="logo">
+    <div class="logo-check">
+      <svg viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M2 7L5.5 10.5L12 4" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    DR Simulator
+  </div>
+  <div class="nav-badge">Interactive →</div>
+</div>
+
+<!-- hero -->
+<div class="hero">
+  <p class="hero-eyebrow">SaaS Finance · Interactive Tool</p>
+  <h1>Deferred revenue, <em>visualized</em></h1>
+  <p class="hero-sub">See exactly how a SaaS contract flows through the income statement, balance sheet, and cash flow — period by period.</p>
+</div>
+
+<!-- main content -->
+<div class="content">
+
+  <!-- top row: inputs + RPO -->
+  <div class="top-row">
+    <div class="card">
+      <div class="inputs">
+        <div class="field">
+          <label>Plan Tier</label>
+          <select id="tier" onchange="update()">
+            <option value="48">Starter — $48k/yr</option>
+            <option value="96">Professional — $96k/yr</option>
+            <option value="180">Enterprise — $180k/yr</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Billing</label>
+          <select id="billing" onchange="update()">
+            <option value="annual">Annual upfront</option>
+            <option value="quarterly">Quarterly upfront</option>
+            <option value="monthly">Monthly</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Length (months)</label>
+          <select id="length" onchange="update()">
+            <option value="12">12 months</option>
+            <option value="24">24 months</option>
+            <option value="36">36 months</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Discount (%)</label>
+          <input type="number" id="discount" value="0" min="0" max="100" step="1" oninput="update()">
+        </div>
+      </div>
+      <div class="acv-display">
+        <div>
+          <div class="acv-label">Effective ACV</div>
+        </div>
+        <div style="text-align:right">
+          <div class="acv-val" id="acv-display">$48k</div>
+          <div class="acv-sub" id="acv-sub">No discount applied</div>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="slider-wrap">
+        <label>Period <span class="val-label" id="month-label">Month 0 — Day 0</span></label>
+        <input type="range" id="month" min="0" max="12" value="0" step="1" oninput="update()">
+      </div>
+    </div>
+
+    <div class="rpo-card">
+      <div>
+        <div class="rpo-eyebrow">Remaining Performance Obligation</div>
+        <div class="rpo-footnote">Footnote disclosure · not a balance sheet line</div>
+      </div>
+      <div>
+        <div class="rpo-val" id="rpo-val">$12k</div>
+        <div class="rpo-of" id="rpo-of">of $12k remaining</div>
+        <div class="rpo-bar-wrap"><div class="rpo-bar-fill" id="rpo-bar" style="width:100%"></div></div>
+        <div class="rpo-pills">
+          <div class="rpo-pill rec">
+            <div class="rpo-pill-left"><span class="p-dot"></span>Recognized</div>
+            <span class="p-val" id="rpo-recognized">$0k</span>
+          </div>
+          <div class="rpo-pill rem">
+            <div class="rpo-pill-left"><span class="p-dot"></span>Still to recognize</div>
+            <span class="p-val" id="rpo-remaining">$12k</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- three statements -->
+  <div class="statements-row">
+
+    <div class="stmt-box pl">
+      <div class="stmt-header">
+        <div class="stmt-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+          </svg>
+        </div>
+        <div class="stmt-name">Income Statement</div>
+      </div>
+      <div class="stmt-body">
+        <div class="srow"><span class="lbl">Revenue this period</span><span class="val" id="pl-rev">—</span></div>
+        <div class="srow"><span class="lbl">Cumulative recognized</span><span class="val" id="pl-cum">—</span></div>
+      </div>
+      <div class="stmt-footer">
+        <div class="foot-label">P&amp;L Revenue</div>
+        <div class="foot-val" id="pl-total">—</div>
+      </div>
+    </div>
+
+    <div class="stmt-box bs">
+      <div class="stmt-header">
+        <div class="stmt-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/>
+          </svg>
+        </div>
+        <div class="stmt-name">Balance Sheet</div>
+      </div>
+      <div class="stmt-body">
+        <div class="srow"><span class="lbl" id="bs-unbilled-lbl">Unbilled AR (contract asset)</span><span class="val" id="bs-unbilled">—</span></div>
+        <div class="srow"><span class="lbl" id="bs-ar-lbl">Accounts Receivable</span><span class="val" id="bs-ar">—</span></div>
+        <div class="srow"><span class="lbl" id="bs-dr-lbl">Deferred Revenue (liability)</span><span class="val" id="bs-dr">—</span></div>
+      </div>
+      <div class="stmt-footer">
+        <div class="foot-label" id="bs-main-lbl">Cash received</div>
+        <div class="foot-val" id="bs-total">—</div>
+      </div>
+    </div>
+
+    <div class="stmt-box cf">
+      <div class="stmt-header">
+        <div class="stmt-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/>
+          </svg>
+        </div>
+        <div class="stmt-name">Cash Flow</div>
+      </div>
+      <div class="stmt-body">
+        <div class="srow"><span class="lbl">Cash in this period</span><span class="val" id="cf-in">—</span></div>
+        <div class="srow"><span class="lbl" id="cf-dr-lbl">Δ Deferred Revenue</span><span class="val" id="cf-dr">—</span></div>
+      </div>
+      <div class="stmt-footer">
+        <div class="foot-label">Oper. CF (cumulative)</div>
+        <div class="foot-val" id="cf-total">—</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- note -->
+  <div class="note" id="note"></div>
+
+  <!-- assumptions -->
+  <div class="assumptions">
+    <div class="assump-heading">Model assumptions</div>
+    <ol class="assump-list">
+      <li><b>Revenue recognition:</b> Straight-line over the contract term per ASC 606 — equal amount each month regardless of billing frequency.</li>
+      <li><b>Monthly billing — collection lag:</b> Invoice issued same month as delivery; cash collected 30 days later, so AR = 1 month of revenue outstanding at month-end.</li>
+      <li><b>Monthly billing — Unbilled AR:</b> $0, because billing and delivery are in the same period. It only appears when there is a lag between delivery and invoicing.</li>
+      <li><b>Annual / quarterly upfront — AR:</b> $0 throughout; cash is received before or at delivery. No collection risk on future periods.</li>
+      <li><b>RPO disclosure:</b> Footnote under ASC 606, not a balance sheet line. For upfront billing, RPO = Deferred Revenue (same unearned amount, different lenses).</li>
+      <li><b>No churn, refunds, or amendments:</b> Contract runs full term. Early termination would reverse unearned DR and reduce RPO immediately.</li>
+    </ol>
+  </div>
+
+</div>
+
+<!-- blue footer stripe -->
+<div class="footer-stripe">
+  <div>
+    <h2>Understanding deferred revenue — <em>the right way</em></h2>
+    <p>Built to make deferred revenue mechanics tangible — period by period.</p>
+  </div>
+</div>
+
+<script>
+function f(v) {
+  return '$' + Math.abs(v).toLocaleString('en-US', { maximumFractionDigits: 0 }) + 'k';
+}
+function fs(v) {
+  return (v >= 0 ? '+' : '−') + '$' + Math.abs(v).toLocaleString('en-US', { maximumFractionDigits: 1 }) + 'k';
+}
+
+const TIER_NAMES = { '48': 'Starter', '96': 'Professional', '180': 'Enterprise' };
+
+function update() {
+  const tierBase = parseFloat(document.getElementById('tier').value);
+  const discount = Math.min(100, Math.max(0, parseFloat(document.getElementById('discount').value) || 0));
+  const acv      = Math.round(tierBase * (1 - discount / 100) * 10) / 10;
+  const billing  = document.getElementById('billing').value;
+
+  // Update ACV display
+  document.getElementById('acv-display').textContent = '$' + acv + 'k';
+  document.getElementById('acv-sub').textContent = discount > 0
+    ? discount + '% discount off $' + tierBase + 'k list price'
+    : 'No discount applied · list price';
+  const months  = parseInt(document.getElementById('length').value);
+  const slider  = document.getElementById('month');
+  slider.max    = months;
+  const month   = Math.min(parseInt(slider.value), months);
+  const mRev    = acv / months;
+
+  const cumRev = month === 0 ? 0 : mRev * month;
+  const rpo    = Math.max(0, acv - cumRev);
+
+  // RPO
+  document.getElementById('rpo-val').textContent        = f(rpo);
+  document.getElementById('rpo-of').textContent         = 'of ' + f(acv) + ' remaining';
+  document.getElementById('rpo-bar').style.width        = ((rpo / acv) * 100).toFixed(1) + '%';
+  document.getElementById('rpo-recognized').textContent = f(cumRev);
+  document.getElementById('rpo-remaining').textContent  = f(rpo);
+
+  const lbl = month === 0 ? '0 — Day 0 (contract signed)' : month + ' — Month ' + month;
+  document.getElementById('month-label').textContent = lbl;
+
+  // ── MONTHLY ──
+  if (billing === 'monthly') {
+    const cashCollected = month === 0 ? 0 : mRev * Math.max(0, month - 1);
+    const ar            = month === 0 ? 0 : mRev;
+    const revThis       = month === 0 ? 0 : mRev;
+    const cashInThis    = month <= 1 ? 0 : mRev;
+
+    document.getElementById('pl-rev').textContent   = month === 0 ? '$0k' : f(revThis);
+    document.getElementById('pl-cum').textContent   = f(cumRev);
+    document.getElementById('pl-total').textContent = month === 0 ? '$0k' : f(cumRev);
+
+    document.getElementById('bs-unbilled-lbl').textContent = 'Unbilled AR (contract asset)';
+    document.getElementById('bs-unbilled').textContent     = '$0k';
+    document.getElementById('bs-ar-lbl').textContent       = 'Accounts Receivable';
+    document.getElementById('bs-ar').textContent           = f(ar);
+    document.getElementById('bs-dr-lbl').textContent       = 'Deferred Revenue';
+    document.getElementById('bs-dr').textContent           = '$0k';
+    document.getElementById('bs-main-lbl').textContent     = 'Cash received';
+    document.getElementById('bs-total').textContent        = f(cashCollected);
+
+    document.getElementById('cf-dr-lbl').textContent = 'Δ AR (working capital)';
+    document.getElementById('cf-in').textContent     = cashInThis > 0 ? f(cashInThis) : '$0k';
+    document.getElementById('cf-dr').textContent     = month <= 1 ? '$0k' : fs(-mRev);
+    document.getElementById('cf-total').textContent  = f(cashCollected);
+
+    document.getElementById('note').innerHTML = month === 0
+      ? '<strong>Day 0 — contract signed, monthly billing:</strong> No cash yet, no service delivered. Nothing hits the balance sheet. The full <strong>' + f(acv) + '</strong> sits as RPO (footnote only) — a contractual commitment to deliver over ' + months + ' months. Unbilled AR and DR are both $0.'
+      : '<strong>Month ' + month + ':</strong> Service delivered → <strong>' + f(revThis) + '</strong> recognized on the P&L and RPO drops by the same amount. Invoice sent → <strong>' + f(ar) + '</strong> moves to <strong>Accounts Receivable</strong> (earned and billed, not yet collected). Cash from last month\'s invoice arrives, converting prior AR → Cash. <strong>Unbilled AR = $0</strong> because invoicing and delivery happen in the same period.';
+    return;
+  }
+
+  // ── ANNUAL / QUARTERLY ──
+  let cumCash = 0, drBalance = 0, cashInThis = 0, drDeltaThis = 0;
+  for (let i = 0; i <= month; i++) {
+    let cashIn = 0;
+    if (i === 0) { cashIn = billing === 'annual' ? acv : acv / 4; }
+    else if (billing === 'quarterly' && i % 3 === 0 && i < months) { cashIn = acv / 4; }
+    const drBefore = drBalance + cashIn;
+    const rev      = i === 0 ? 0 : mRev;
+    drBalance      = Math.max(0, drBefore - rev);
+    cumCash       += cashIn;
+    if (i === month) { cashInThis = cashIn; drDeltaThis = cashIn - rev; }
+  }
+  const revThis = month === 0 ? 0 : mRev;
+
+  document.getElementById('pl-rev').textContent   = month === 0 ? '$0k' : f(revThis);
+  document.getElementById('pl-cum').textContent   = f(cumRev);
+  document.getElementById('pl-total').textContent = month === 0 ? '$0k' : f(cumRev);
+
+  document.getElementById('bs-unbilled-lbl').textContent = 'Unbilled AR (contract asset)';
+  document.getElementById('bs-unbilled').textContent     = '$0k';
+  document.getElementById('bs-ar-lbl').textContent       = 'Accounts Receivable';
+  document.getElementById('bs-ar').textContent           = '$0k';
+  document.getElementById('bs-dr-lbl').textContent       = 'Deferred Revenue (liability)';
+  document.getElementById('bs-dr').textContent           = f(drBalance);
+  document.getElementById('bs-main-lbl').textContent     = 'Cash received';
+  document.getElementById('bs-total').textContent        = f(cumCash);
+
+  document.getElementById('cf-dr-lbl').textContent = 'Δ Deferred Revenue';
+  document.getElementById('cf-in').textContent     = cashInThis > 0 ? f(cashInThis) : '$0k';
+  document.getElementById('cf-dr').textContent     = fs(drDeltaThis);
+  document.getElementById('cf-total').textContent  = f(cumCash);
+
+  let note = '';
+  if (month === 0) {
+    const first = billing === 'annual' ? acv : acv / 4;
+    note = '<strong>Day 0:</strong> Customer pays <strong>' + f(first) + '</strong> upfront. Cash in, no service delivered → $0 on P&L. The payment becomes <strong>Deferred Revenue</strong> on the balance sheet (a liability — you owe the service). RPO = ' + f(acv) + ' — same as DR here, since the customer paid for everything not yet delivered. AR = $0, Unbilled AR = $0.';
+  } else if (month < months) {
+    note = '<strong>Month ' + month + ':</strong> <strong>' + f(revThis) + '</strong> earned → recognized on P&L and DR liability shrinks by the same amount. RPO drops by <strong>' + f(revThis) + '</strong>. Cash doesn\'t move this month' + (cashInThis > 0 ? ' — except a new billing installment of <strong>' + f(cashInThis) + '</strong>' : '') + '. AR = $0 (customer already paid upfront). Remaining DR: <strong>' + f(drBalance) + '</strong>.';
+  } else {
+    note = '<strong>Month ' + month + ' (final):</strong> Last <strong>' + f(revThis) + '</strong> recognized. Deferred Revenue and RPO both reach <strong>$0k</strong> — obligation fully discharged. Total revenue equals the full ACV of <strong>' + f(acv) + '</strong>.';
+  }
+  document.getElementById('note').innerHTML = note;
+}
+
+update();
+</script>
+</body>
+</html>
